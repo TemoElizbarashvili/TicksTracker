@@ -1,6 +1,7 @@
-﻿using ExeTicksTracker.Data;
+using ExeTicksTracker.Data;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Linq;
 
 namespace ExeTicksTracker.Tracking;
 
@@ -12,12 +13,45 @@ public class ForegroundTracker
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
-    private readonly TimeSpan _pollInterval = TimeSpan.FromSeconds(1);
+    // Default poll interval; can be overridden by settings
+    private TimeSpan _pollInterval = TimeSpan.FromSeconds(2);
+    private DateOnly _lastRetentionDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         await using var db = new UsageDbContext();
         await db.Database.EnsureCreatedAsync(cancellationToken);
+
+        // Load settings (with safe fallbacks)
+        var retentionDays = 90;
+        var pollSeconds = 2;
+        try
+        {
+            var retentionSetting = db.AppSettings.FirstOrDefault(x => x.Key == "RetentionDays");
+            if (retentionSetting != null &&
+                int.TryParse(retentionSetting.Value, out var parsedRetention) &&
+                parsedRetention > 0)
+            {
+                retentionDays = parsedRetention;
+            }
+
+            var pollSetting = db.AppSettings.FirstOrDefault(x => x.Key == "PollSeconds");
+            if (pollSetting != null &&
+                int.TryParse(pollSetting.Value, out var parsedPoll) &&
+                parsedPoll >= 1 && parsedPoll <= 10)
+            {
+                pollSeconds = parsedPoll;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WARN] Settings read error: {ex.Message}");
+        }
+
+        _pollInterval = TimeSpan.FromSeconds(pollSeconds);
+
+        // Run retention once at startup
+        await RunRetentionAsync(db, retentionDays, cancellationToken);
 
         string? currentProcess = null;
         var currentStartUtc = DateTime.UtcNow;
@@ -54,14 +88,88 @@ public class ForegroundTracker
                 break;
             }
 
-            // app is shutting down: close last interval
-            if (currentProcess != null)
+            // Run retention once per day while service/app is running
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            if (today > _lastRetentionDate && !cancellationToken.IsCancellationRequested)
             {
-                await SaveIntervalAsync(currentProcess, currentStartUtc, DateTime.UtcNow, cancellationToken);
+                await RunRetentionAsync(db, retentionDays, cancellationToken);
+                _lastRetentionDate = today;
             }
         }
 
+        // App is shutting down: close last interval once
+        if (currentProcess != null)
+        {
+            await SaveIntervalAsync(currentProcess, currentStartUtc, DateTime.UtcNow, cancellationToken);
+        }
+    }
 
+    private static async Task RunRetentionAsync(
+        UsageDbContext db,
+        int retentionDays,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var cutoffDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-retentionDays));
+            var oldIntervals = db.AppUsageIntervals
+                .Where(x => x.ProcessUsingDate < cutoffDate)
+                .ToList();
+
+            if (oldIntervals.Count == 0)
+            {
+                return;
+            }
+
+            var grouped = oldIntervals
+                .GroupBy(x => x.ProcessName);
+
+            foreach (var group in grouped)
+            {
+                var processName = group.Key;
+                var totalSeconds = group.Sum(i => (i.EndUtc - i.StartUtc).TotalSeconds);
+                var firstSeen = group.Min(i => i.StartUtc);
+                var lastSeen = group.Max(i => i.EndUtc);
+                var sessionCount = group.Count();
+
+                var aggregate = db.AppUsageAggregates
+                    .FirstOrDefault(a => a.ProcessName == processName);
+
+                if (aggregate == null)
+                {
+                    aggregate = new AppUsageAggregate
+                    {
+                        Id = Guid.CreateVersion7(),
+                        ProcessName = processName,
+                        TotalSeconds = totalSeconds,
+                        SessionCount = sessionCount,
+                        FirstSeenUtc = firstSeen,
+                        LastSeenUtc = lastSeen
+                    };
+                    db.AppUsageAggregates.Add(aggregate);
+                }
+                else
+                {
+                    aggregate.TotalSeconds += totalSeconds;
+                    aggregate.SessionCount += sessionCount;
+                    if (firstSeen < aggregate.FirstSeenUtc)
+                    {
+                        aggregate.FirstSeenUtc = firstSeen;
+                    }
+                    if (lastSeen > aggregate.LastSeenUtc)
+                    {
+                        aggregate.LastSeenUtc = lastSeen;
+                    }
+                }
+            }
+
+            db.AppUsageIntervals.RemoveRange(oldIntervals);
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WARN] Retention/aggregation error: {ex.Message}");
+        }
     }
 
     private static string? GetCurrentForegroundProcessName()
@@ -96,6 +204,13 @@ public class ForegroundTracker
         CancellationToken token)
     {
         if (endUtc <= startUtc) return;
+
+        // Do not track this tracker or the UI viewer itself
+        if (string.Equals(processName, "ExeTicksTracker", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(processName, "ExeTickTracker.UI", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
 
         await using var db = new UsageDbContext();
         var interval = new AppUsageInterval

@@ -1,39 +1,359 @@
-﻿<Window x:Class="ExeTickTracker.UI.MainWindow"
+<Window x:Class="ExeTickTracker.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:ExeTickTracker.UI"
         mc:Ignorable="d"
-        Title="App Usage Viewer" Height="450" Width="800">
-    <DockPanel Margin="8">
-        <!-- Top bar: search and minimal filter -->
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0 0 0 8">
-            <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0 0 4 0"/>
-            <TextBox x:Name="SearchBox" Width="200" Margin="0 0 8 0"
-                     TextChanged="SearchBox_OnTextChanged" />
-            <TextBlock Text="Min minutes:" VerticalAlignment="Center" Margin="0 0 4 0"/>
-            <TextBox x:Name="MinMinutesBox" Width="60" Text="1"
-                     TextChanged="MinMinutesBox_OnTextChanged"/>
-        </StackPanel>
+        Title="App Usage Viewer"
+        Height="500"
+        Width="900"
+        MinWidth="800"
+        MinHeight="450">
+    <DockPanel Margin="8"
+               Background="{DynamicResource AppWindowBackgroundBrush}">
+        <DockPanel.Resources>
+            <local:SecondsToHeightConverter x:Key="SecondsToHeightConverter" />
+        </DockPanel.Resources>
+        <Border DockPanel.Dock="Top"
+                Margin="0 0 0 8"
+                Padding="8"
+                Background="{DynamicResource AppHeaderBackgroundBrush}"
+                CornerRadius="4">
+            <StackPanel>
+                <DockPanel LastChildFill="False">
+                    <TextBlock Text="App Usage Viewer"
+                               FontSize="20"
+                               FontWeight="Bold"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                    <StackPanel Orientation="Horizontal"
+                                DockPanel.Dock="Right"
+                                VerticalAlignment="Center">
+                        <TextBlock Text="Theme:"
+                                   VerticalAlignment="Center"
+                                   Margin="0 0 4 0"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                        <ComboBox x:Name="ThemeCombo"
+                                  Width="120"
+                                  Margin="0 0 8 0"
+                                  SelectedIndex="0"
+                                  Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                  SelectionChanged="ThemeCombo_OnSelectionChanged" >
+                            <ComboBoxItem Content="Light" Tag="Light" IsSelected="True" />
+                            <ComboBoxItem Content="Dark" Tag="Dark" />
+                            <ComboBoxItem Content="Night" Tag="Night" />
+                        </ComboBox>
 
-        <DataGrid x:Name="UsageGrid"
-                  IsReadOnly="True"
-                  AutoGenerateColumns="False"
-                  CanUserSortColumns="True">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Process"
-                                    Binding="{Binding ProcessName}"
-                                    Width="*"/>
-                <DataGridTextColumn Header="Total Time"
-                                    Binding="{Binding TotalTimeFormatted}"
-                                    Width="150"/>
-                <DataGridTextColumn Header="First Seen"
-                                    Binding="{Binding FirstSeenLocal}"
-                                    Width="160"/>
-                <DataGridTextColumn Header="Last Seen"
-                                    Binding="{Binding LastSeenLocal}"
-                                    Width="160"/>
-            </DataGrid.Columns>
-        </DataGrid>
+                        <Button x:Name="RefreshButton"
+                                Click="RefreshButton_OnClick"
+                                Margin="8 0 0 0"
+                                Padding="6 2"
+                                ToolTip="Reload usage data">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="⟳"
+                                           FontSize="14"
+                                           Margin="0 0 4 0" />
+                                <TextBlock Text="Refresh" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </DockPanel>
+
+                <WrapPanel Margin="0 8 0 0">
+                    <TextBlock Text="Search:"
+                               VerticalAlignment="Center"
+                               Margin="0 0 4 0"
+                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                    <TextBox x:Name="SearchBox"
+                             Width="240"
+                             Margin="0 0 12 0"
+                             TextChanged="SearchBox_OnTextChanged" />
+
+                    <TextBlock Text="Min minutes:"
+                               VerticalAlignment="Center"
+                               Margin="0 0 4 0"
+                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                    <TextBox x:Name="MinMinutesBox"
+                             Width="70"
+                             Text="1"
+                             Margin="0 0 12 0"
+                             TextChanged="MinMinutesBox_OnTextChanged" />
+
+                    <TextBlock Text="Min sessions:"
+                               VerticalAlignment="Center"
+                               Margin="0 0 4 0"
+                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                    <TextBox x:Name="MinSessionsBox"
+                             Width="70"
+                             Text="0"
+                             Margin="0 0 12 0"
+                             TextChanged="MinSessionsBox_OnTextChanged" />
+
+                    <TextBlock Text="Last used:"
+                               VerticalAlignment="Center"
+                               Margin="0 0 4 0"
+                               Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                    <ComboBox x:Name="LastUsedCombo"
+                              Width="140"
+                              Foreground="{DynamicResource AppPrimaryTextBrush}"
+                              SelectedIndex="0"
+                              SelectionChanged="LastUsedCombo_OnSelectionChanged">
+                        <ComboBoxItem Content="Any time" Tag="Any" IsSelected="True" />
+                        <ComboBoxItem Content="Today" Tag="Today" />
+                        <ComboBoxItem Content="Last 7 days" Tag="7" />
+                        <ComboBoxItem Content="Last 30 days" Tag="30" />
+                    </ComboBox>
+                </WrapPanel>
+
+                <TextBlock x:Name="SummaryText"
+                           Margin="0 4 0 0"
+                           Foreground="{DynamicResource AppSecondaryTextBrush}"
+                           FontSize="12"
+                           Text="Ready" />
+            </StackPanel>
+        </Border>
+
+        <TabControl>
+            <TabItem Header="Summary">
+                <Border BorderBrush="{DynamicResource AppBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Background="{DynamicResource AppContentBackgroundBrush}"
+                        Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="Overview"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                        <TextBlock Text="High-level stats across all tracked apps"
+                                   Margin="0,2,0,12"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                   FontSize="12" />
+
+                        <UniformGrid Columns="3" Margin="0,0,0,12">
+                            <Border Margin="0,0,8,0"
+                                    Padding="8"
+                                    CornerRadius="6"
+                                    Background="{DynamicResource AppWindowBackgroundBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="Total tracked time"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                                    <TextBlock x:Name="SummaryTotalTimeText"
+                                               FontSize="18"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="4,0"
+                                    Padding="8"
+                                    CornerRadius="6"
+                                    Background="{DynamicResource AppWindowBackgroundBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="Tracked apps"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                                    <TextBlock x:Name="SummaryAppCountText"
+                                               FontSize="18"
+                                               FontWeight="Bold"
+                                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border Margin="8,0,0,0"
+                                    Padding="8"
+                                    CornerRadius="6"
+                                    Background="{DynamicResource AppWindowBackgroundBrush}">
+                                <StackPanel>
+                                    <TextBlock Text="Top app (all time)"
+                                               FontSize="12"
+                                               Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                                    <TextBlock x:Name="SummaryTopAppText"
+                                               FontSize="14"
+                                               FontWeight="Bold"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </TabItem>
+
+            <TabItem Header="Table">
+                <Border BorderBrush="{DynamicResource AppBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Background="{DynamicResource AppRowBackgroundBrush}"
+                        Padding="1">
+                    <DataGrid x:Name="UsageGrid"
+                              IsReadOnly="True"
+                              AutoGenerateColumns="False"
+                              CanUserSortColumns="True"
+                              HeadersVisibility="Column"
+                              AlternationCount="2"
+                              RowBackground="{DynamicResource AppRowBackgroundBrush}"
+                              AlternatingRowBackground="{DynamicResource AppRowAlternateBackgroundBrush}"
+                              GridLinesVisibility="Horizontal"
+                              MouseDoubleClick="UsageGrid_OnMouseDoubleClick"
+                              FontSize="13"
+                              RowHeight="28"
+                              Background="{DynamicResource AppContentBackgroundBrush}"
+                              Foreground="{DynamicResource AppPrimaryTextBrush}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Process"
+                                                Binding="{Binding ProcessName}"
+                                                Width="*"
+                                                MinWidth="220" />
+                    <DataGridTextColumn Header="Total Time"
+                                                Binding="{Binding TotalHoursDisplay}"
+                                                Width="100" />
+                            <DataGridTextColumn Header="Sessions"
+                                                Binding="{Binding SessionCount}"
+                                                Width="80" />
+                            <DataGridTextColumn Header="First Seen"
+                                                Binding="{Binding FirstSeenLocal}"
+                                                Width="160" />
+                            <DataGridTextColumn Header="Last Seen"
+                                                Binding="{Binding LastSeenLocal}"
+                                                Width="160" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Border>
+            </TabItem>
+
+            <TabItem Header="Top 10 Chart">
+                <Border BorderBrush="{DynamicResource AppBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Background="{DynamicResource AppContentBackgroundBrush}"
+                        Padding="8">
+                    <Grid>
+                        <!-- Transparent interval \"map\" behind the columns -->
+                        <Grid Margin="0,12,0,32"
+                              VerticalAlignment="Stretch">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Rectangle Grid.Column="0"
+                                       Fill="{DynamicResource AppSecondaryTextBrush}"
+                                       Opacity="0.03" />
+                            <Rectangle Grid.Column="1"
+                                       Fill="{DynamicResource AppSecondaryTextBrush}"
+                                       Opacity="0.05" />
+                            <Rectangle Grid.Column="2"
+                                       Fill="{DynamicResource AppSecondaryTextBrush}"
+                                       Opacity="0.03" />
+                            <Rectangle Grid.Column="3"
+                                       Fill="{DynamicResource AppSecondaryTextBrush}"
+                                       Opacity="0.05" />
+                        </Grid>
+
+                        <!-- Centered top-10 bar chart -->
+                        <ItemsControl x:Name="ChartItems"
+                                      HorizontalAlignment="Center"
+                                      VerticalAlignment="Stretch"
+                                      Margin="0,4,0,16"
+                                      Panel.ZIndex="1">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="8,4"
+                                                Width="56"
+                                                ToolTip="{Binding ProcessName}">
+                                        <Grid Height="140"
+                                              Margin="0,4,0,4">
+                                            <Border VerticalAlignment="Bottom"
+                                                    Background="{DynamicResource AppAccentBrush}"
+                                                    CornerRadius="6,6,0,0">
+                                                <Border.Height>
+                                                    <MultiBinding Converter="{StaticResource SecondsToHeightConverter}">
+                                                        <Binding Path="TotalSeconds" />
+                                                        <Binding Path="MaxTotalSeconds"
+                                                                 RelativeSource="{RelativeSource AncestorType=Window}" />
+                                                    </MultiBinding>
+                                                </Border.Height>
+                                            </Border>
+                                        </Grid>
+                                        <TextBlock Text="{Binding ProcessName}"
+                                                   FontSize="11"
+                                                   TextAlignment="Center"
+                                                   Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Text="{Binding TotalHoursDisplay}"
+                                                   FontSize="11"
+                                                   TextAlignment="Center"
+                                                   Foreground="{DynamicResource AppSecondaryTextBrush}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Border>
+            </TabItem>
+
+            <TabItem Header="Settings">
+                <Border BorderBrush="{DynamicResource AppBorderBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4"
+                        Background="{DynamicResource AppRowBackgroundBrush}"
+                        Padding="12">
+                    <StackPanel>
+                        <TextBlock Text="Settings"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                        <TextBlock Text="Control data retention and sampling rate used by the tracker."
+                                   Margin="0,2,0,12"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                   FontSize="12" />
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="Retention window (days):"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                            <TextBox x:Name="RetentionDaysBox"
+                                     Width="60"
+                                     Margin="8 0 0 0"
+                                     Text="90"
+                                     PreviewTextInput="RetentionDaysBox_OnPreviewTextInput"
+                                     LostFocus="RetentionDaysBox_OnLostFocus" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <TextBlock Text="Sampling accuracy:"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                            <ComboBox x:Name="AccuracyCombo"
+                                      Width="160"
+                                      Margin="8 0 0 0"
+                                      SelectionChanged="AccuracyCombo_OnSelectionChanged">
+                                <ComboBoxItem Content="High (1s polling)" Tag="1" />
+                                <ComboBoxItem Content="Normal (2s polling)" Tag="2" IsSelected="True" />
+                                <ComboBoxItem Content="Low (5s polling)" Tag="5" />
+                            </ComboBox>
+                        </StackPanel>
+
+                        <TextBlock Text="Changes are applied the next time the tracker process starts."
+                                   Margin="0,12,0,0"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                   FontSize="11" />
+                        <TextBlock x:Name="CurrentConfigText"
+                                   Margin="0,4,0,0"
+                                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                   FontSize="11" />
+                    </StackPanel>
+                </Border>
+            </TabItem>
+        </TabControl>
     </DockPanel>
 </Window>

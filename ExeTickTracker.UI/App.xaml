@@ -4,6 +4,106 @@
              xmlns:local="clr-namespace:ExeTickTracker.UI"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <!-- Default (light) theme brushes -->
+        <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#FFF2F2F2" />
+        <SolidColorBrush x:Key="AppHeaderBackgroundBrush" Color="#FFFFFFFF" />
+        <SolidColorBrush x:Key="AppContentBackgroundBrush" Color="#FFFFFFFF" />
+        <SolidColorBrush x:Key="AppBorderBrush" Color="#FFDDDDDD" />
+        <SolidColorBrush x:Key="AppRowBackgroundBrush" Color="#FFFFFFFF" />
+        <SolidColorBrush x:Key="AppRowAlternateBackgroundBrush" Color="#FFF5F7FB" />
+        <SolidColorBrush x:Key="AppPrimaryTextBrush" Color="#FF111111" />
+        <SolidColorBrush x:Key="AppSecondaryTextBrush" Color="#FF666666" />
+        <SolidColorBrush x:Key="AppAccentBrush" Color="#FF3B82F6" />
+
+        <!-- Base control styles to match theme -->
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{DynamicResource AppRowBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4" />
+            <Setter Property="CaretBrush" Value="{DynamicResource AppAccentBrush}" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource AppAccentBrush}" />
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="{DynamicResource AppRowBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="2" />
+        </Style>
+
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Setter Property="Padding" Value="4,2" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AppRowAlternateBackgroundBrush}" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="Cursor" Value="Hand" />
+        </Style>
+
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+        </Style>
+
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="Background" Value="{DynamicResource AppHeaderBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+
+        <Style TargetType="DataGridRow">
+            <Setter Property="Background" Value="{DynamicResource AppRowBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AppRowAlternateBackgroundBrush}" />
+                </Trigger>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
+                    <Setter Property="Foreground" Value="White" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent" />
+        </Style>
+
+        <Style TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="10,4" />
+            <Setter Property="BorderThickness" Value="0,0,0,2" />
+            <Setter Property="BorderBrush" Value="Transparent" />
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+                    <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}" />
+                    <Setter Property="Background" Value="{DynamicResource AppHeaderBackgroundBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
     </Application.Resources>
 </Application>
