@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ExeTickTracker.UI"
+        xmlns:helpers="clr-namespace:ExeTickTracker.UI.Helpers"
         mc:Ignorable="d"
         Title="App Usage Viewer"
         Height="600"
@@ -12,11 +13,128 @@
         MinHeight="650">
 
     <Window.Resources>
-        <local:SecondsToHeightConverter x:Key="SecondsToHeightConverter" />
+        <helpers:SecondsToHeightConverter x:Key="SecondsToHeightConverter" />
 
-        <!-- ================= COMBOBOX STYLES ================= -->
+        <Style x:Key="CustomCalendarStyle" TargetType="{x:Type Calendar}">
+            <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True" />
+        </Style>
 
-        <!-- 1. ComboBox Toggle Button (The Arrow) -->
+        <Style x:Key="CustomDatePickerTextBoxStyle" TargetType="{x:Type DatePickerTextBox}">
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="SelectionBrush" Value="{DynamicResource AppAccentBrush}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DatePickerTextBox">
+                        <Grid>
+                            <Border x:Name="Border"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0"
+                                    Padding="4,2">
+                                <ScrollViewer x:Name="PART_ContentHost" 
+                                              VerticalContentAlignment="Center"
+                                              HorizontalContentAlignment="Stretch" />
+                            </Border>
+                            <TextBlock x:Name="Watermark"
+                                       Text="Select date"
+                                       Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                       VerticalAlignment="Center"
+                                       Margin="4,0,0,0"
+                                       IsHitTestVisible="False"
+                                       Visibility="Collapsed"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Text" Value="">
+                                <Setter TargetName="Watermark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CustomDatePickerButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid Background="Transparent">
+                            <Path Data="M0,0 H14 V14 H0 Z M0,2 H14 M3,0 V4 M11,0 V4"
+                                  Stroke="{TemplateBinding Foreground}"
+                                  StrokeThickness="1.5"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Width="14" Height="14"
+                                  SnapsToDevicePixels="True"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="{x:Type DatePicker}">
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}"/>
+            <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CalendarStyle" Value="{StaticResource CustomCalendarStyle}"/>
+            <Setter Property="IsTodayHighlighted" Value="True"/>
+            <Setter Property="Padding" Value="2"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type DatePicker}">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="2">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <DatePickerTextBox x:Name="PART_TextBox"
+                                                   Grid.Column="0"
+                                                   Style="{StaticResource CustomDatePickerTextBoxStyle}" 
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Stretch"/>
+
+                                <Button x:Name="PART_Button"
+                                        Grid.Column="1"
+                                        Style="{StaticResource CustomDatePickerButtonStyle}"
+                                        Focusable="False"
+                                        VerticalAlignment="Stretch"/>
+
+                                <Popup x:Name="PART_Popup"
+                                       AllowsTransparency="True"
+                                       Placement="Bottom"
+                                       StaysOpen="False"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="BorderBrush" Value="{DynamicResource AppAccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <ControlTemplate x:Key="ComboBoxToggleButton" TargetType="ToggleButton">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -44,7 +162,6 @@
             </ControlTemplate.Triggers>
         </ControlTemplate>
 
-        <!-- 2. ComboBox Main Template (Flat Style) -->
         <ControlTemplate x:Key="FlatComboBoxTemplate" TargetType="ComboBox">
             <Grid>
                 <ToggleButton Name="ToggleButton" 
@@ -83,14 +200,12 @@
             </Grid>
         </ControlTemplate>
 
-        <!-- 3. The Actual ComboBox Style -->
         <Style TargetType="ComboBox">
             <Setter Property="Template" Value="{StaticResource FlatComboBoxTemplate}"/>
             <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}"/>
             <Setter Property="Margin" Value="0,0,0,0"/>
         </Style>
 
-        <!-- 4. The Items inside the dropdown -->
         <Style TargetType="ComboBoxItem">
             <Setter Property="SnapsToDevicePixels" Value="True"/>
             <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}"/>
@@ -119,9 +234,6 @@
             </Setter>
         </Style>
 
-        <!-- ================= TAB & DATA GRID STYLES ================= -->
-
-        <!-- Custom TabItem Style -->
         <Style TargetType="TabItem">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
@@ -156,28 +268,23 @@
             </Setter>
         </Style>
 
-        <!-- Clean TabControl Style -->
         <Style TargetType="TabControl">
             <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
-        <!-- DataGrid Row Style (Fixes Selection) -->
         <Style TargetType="DataGridRow">
             <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}"/>
             <Style.Triggers>
-                <!-- Selection Trigger -->
                 <Trigger Property="IsSelected" Value="True">
                     <Setter Property="Background" Value="{DynamicResource AppAccentBrush}"/>
                     <Setter Property="Foreground" Value="White"/>
                     <Setter Property="BorderThickness" Value="0"/>
                 </Trigger>
-                <!-- Mouse Over Trigger (Optional, makes it feel responsive) -->
                 <Trigger Property="IsMouseOver" Value="True">
                     <Setter Property="Background" Value="{DynamicResource AppRowAlternateBackgroundBrush}"/>
                 </Trigger>
-                <!-- Ensure Selected+MouseOver stays blue -->
                 <MultiTrigger>
                     <MultiTrigger.Conditions>
                         <Condition Property="IsSelected" Value="True"/>
@@ -193,7 +300,6 @@
 
     <DockPanel Margin="0" Background="{DynamicResource AppWindowBackgroundBrush}">
 
-        <!-- Header Area -->
         <Border DockPanel.Dock="Top"
                 Padding="16"
                 Background="{DynamicResource AppHeaderBackgroundBrush}"
@@ -231,17 +337,18 @@
                                 Foreground="{DynamicResource AppPrimaryTextBrush}"
                                 BorderBrush="{DynamicResource AppBorderBrush}"
                                 ToolTip="Reload usage data">
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal"
+                                          VerticalAlignment="Center">
                                 <TextBlock Text="⟳"
                                            FontSize="14"
                                            Margin="0 0 6 0" />
-                                <TextBlock Text="Refresh" />
+                                <TextBlock Text="Refresh"
+                                             VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
                     </StackPanel>
                 </DockPanel>
 
-                <!-- Filters Row -->
                 <WrapPanel Margin="0 16 0 0">
                     <StackPanel Orientation="Horizontal" Margin="0 0 16 8">
                         <TextBlock Text="Search:"
@@ -312,7 +419,6 @@
             </StackPanel>
         </Border>
 
-        <!-- Main Content Tabs -->
         <TabControl Margin="16">
             <TabItem Header="Summary">
                 <Border CornerRadius="0 4 4 4"
@@ -391,58 +497,268 @@
             <TabItem Header="Table">
                 <Border Background="{DynamicResource AppContentBackgroundBrush}"
                         Padding="0">
-                    <DataGrid x:Name="UsageGrid"
-                              IsReadOnly="True"
-                              AutoGenerateColumns="False"
-                              CanUserSortColumns="True"
-                              HeadersVisibility="Column"
-                              AlternationCount="2"
-                              BorderThickness="0"
-                              RowBackground="Transparent"
-                              AlternatingRowBackground="Transparent"
-                              GridLinesVisibility="Horizontal"
-                              HorizontalGridLinesBrush="{DynamicResource AppBorderBrush}"
-                              MouseDoubleClick="UsageGrid_OnMouseDoubleClick"
-                              FontSize="13"
-                              RowHeight="32"
-                              Background="{DynamicResource AppContentBackgroundBrush}"
-                              Foreground="{DynamicResource AppPrimaryTextBrush}">
-                        <DataGrid.Resources>
-                            <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
-                                <Setter Property="Padding" Value="8,6"/>
-                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
-                                <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
-                            </Style>
-                        </DataGrid.Resources>
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Process"
-                                                Binding="{Binding ProcessName}"
-                                                Width="*"
-                                                MinWidth="220" />
-                            <DataGridTextColumn Header="Total Time"
-                                                Binding="{Binding TotalHoursDisplay}"
-                                                Width="120" />
-                            <DataGridTextColumn Header="Sessions"
-                                                Binding="{Binding SessionCount}"
-                                                Width="100" />
-                            <DataGridTextColumn Header="First Seen"
-                                                Binding="{Binding FirstSeenLocal}"
-                                                Width="180" />
-                            <DataGridTextColumn Header="Last Seen"
-                                                Binding="{Binding LastSeenLocal}"
-                                                Width="180" />
-                        </DataGrid.Columns>
-                    </DataGrid>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel>
+                            <DataGrid x:Name="UsageGrid"
+                                      IsReadOnly="True"
+                                      AutoGenerateColumns="False"
+                                      CanUserSortColumns="True"
+                                      HeadersVisibility="Column"
+                                      AlternationCount="2"
+                                      BorderThickness="0"
+                                      RowBackground="Transparent"
+                                      AlternatingRowBackground="Transparent"
+                                      GridLinesVisibility="All"
+                                      HorizontalGridLinesBrush="{DynamicResource AppBorderBrush}"
+                                      VerticalGridLinesBrush="{DynamicResource AppBorderBrush}"
+                                  MouseDoubleClick="UsageGrid_OnMouseDoubleClick"
+                                  PreviewMouseWheel="UsageGrid_OnPreviewMouseWheel"
+                                  FontSize="13"
+                                  RowHeight="32"
+                                  Background="{DynamicResource AppContentBackgroundBrush}"
+                                  Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                  ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                                <DataGrid.Resources>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
+                                        <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
+                                        <Setter Property="Padding" Value="8,6"/>
+                                        <Setter Property="BorderThickness" Value="0,0,1,2"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="DataGridColumnHeader">
+                                                    <Grid>
+                                                        <Border Background="{TemplateBinding Background}"
+                                                                BorderBrush="{TemplateBinding BorderBrush}"
+                                                                BorderThickness="{TemplateBinding BorderThickness}">
+                                                            <Grid>
+                                                                <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                                                  VerticalAlignment="Center"
+                                                                                  HorizontalAlignment="Stretch"
+                                                                                  RecognizesAccessKey="True"/>
+                                                                <TextBlock x:Name="SortArrow"
+                                                                           FontSize="10"
+                                                                           Margin="4,0,4,0"
+                                                                           HorizontalAlignment="Right"
+                                                                           VerticalAlignment="Center"
+                                                                           Foreground="{TemplateBinding Foreground}"
+                                                                           Visibility="Collapsed"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="SortDirection" Value="Ascending">
+                                                            <Setter TargetName="SortArrow" Property="Text" Value="▲"/>
+                                                            <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                                        </Trigger>
+                                                        <Trigger Property="SortDirection" Value="Descending">
+                                                            <Setter TargetName="SortArrow" Property="Text" Value="▼"/>
+                                                            <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                                        </Trigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                        <Style.Triggers>
+                                            <Trigger Property="SortDirection" Value="Ascending">
+                                                <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </Trigger>
+                                            <Trigger Property="SortDirection" Value="Descending">
+                                                <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.Resources>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Process"
+                                                        Binding="{Binding ProcessName}"
+                                                        Width="*"
+                                                        MinWidth="220" />
+                                    <DataGridTextColumn Header="Total Time"
+                                                        Binding="{Binding TotalHoursDisplay}"
+                                                        SortMemberPath="TotalSeconds"
+                                                        Width="120" />
+                                    <DataGridTextColumn Header="Sessions"
+                                                        Binding="{Binding SessionCount}"
+                                                        SortMemberPath="SessionCount"
+                                                        Width="100" />
+                                    <DataGridTextColumn Header="First Seen"
+                                                        Binding="{Binding FirstSeenLocal}"
+                                                        SortMemberPath="FirstSeenUtc"
+                                                        Width="180" />
+                                    <DataGridTextColumn Header="Last Seen"
+                                                        Binding="{Binding LastSeenLocal}"
+                                                        SortMemberPath="LastSeenUtc"
+                                                        Width="180" />
+                                </DataGrid.Columns>
+                            </DataGrid>
+
+                            <Button x:Name="LoadMoreButton"
+                                    Content="Load more"
+                                    Margin="0,4,0,8"
+                                    Padding="16,6"
+                                    HorizontalAlignment="Center"
+                                    Background="{DynamicResource AppWindowBackgroundBrush}"
+                                    Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                    BorderBrush="{DynamicResource AppBorderBrush}"
+                                    Click="LoadMoreButton_OnClick"
+                                    Visibility="Collapsed" />
+                        </StackPanel>
+                    </ScrollViewer>
                 </Border>
+            </TabItem>
+
+            <TabItem Header="Date Range">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top"
+                                  Orientation="Horizontal"
+                                  HorizontalAlignment="Center"
+                                  Margin="0 10 0 8">
+                        <TextBlock Text="From:"
+                                     VerticalAlignment="Center"
+                                     Margin="5 0 4 0"
+                                     Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                        <DatePicker x:Name="RangeFromPicker"
+                                        Width="140"
+                                        Margin="0 0 12 0"
+                                        VerticalAlignment="Center"
+                                        SelectedDateChanged="RangeFromPicker_OnSelectedDateChanged" />
+
+                        <CheckBox x:Name="RangeIsSpanCheckBox"
+                                      Content="Use range"
+                                      VerticalAlignment="Center"
+                                      Margin="10 0 8 0"
+                                      Foreground="{DynamicResource AppPrimaryTextBrush}"
+                                      Checked="RangeIsSpanCheckBox_OnCheckedChanged"
+                                      Unchecked="RangeIsSpanCheckBox_OnCheckedChanged" />
+
+                        <TextBlock Text="To:"
+                                       VerticalAlignment="Center"
+                                       Margin="10 0 4 0"
+                                       Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                        <DatePicker x:Name="RangeToPicker"
+                                        Width="140"
+                                        Margin="0 0 12 0"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="False"
+                                        SelectedDateChanged="RangeToPicker_OnSelectedDateChanged" />
+
+                        <TextBlock Text="Search:"
+                                     VerticalAlignment="Center"
+                                     Margin="10 0 4 0"
+                                     Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                        <TextBox x:Name="RangeSearchBox"
+                                     Width="160"
+                                     Margin="0 0 12 0"
+                                     TextChanged="RangeSearchBox_OnTextChanged" />
+                    </StackPanel>
+
+                    <Border Background="{DynamicResource AppContentBackgroundBrush}"
+                              Padding="0">
+                        <DataGrid x:Name="RangeGrid"
+                                    IsReadOnly="True"
+                                    AutoGenerateColumns="False"
+                                    CanUserSortColumns="True"
+                                    HeadersVisibility="Column"
+                                    AlternationCount="2"
+                                    BorderThickness="0"
+                                    RowBackground="Transparent"
+                                    AlternatingRowBackground="Transparent"
+                                    GridLinesVisibility="All"
+                                    HorizontalGridLinesBrush="{DynamicResource AppBorderBrush}"
+                                    VerticalGridLinesBrush="{DynamicResource AppBorderBrush}"
+                                    FontSize="13"
+                                    RowHeight="32"
+                                    Background="{DynamicResource AppContentBackgroundBrush}"
+                                    Foreground="{DynamicResource AppPrimaryTextBrush}">
+                            <DataGrid.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
+                                    <Setter Property="Padding" Value="8,6"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="DataGridColumnHeader">
+                                                <Grid>
+                                                    <Border Background="{TemplateBinding Background}"
+                                                            BorderBrush="{TemplateBinding BorderBrush}"
+                                                            BorderThickness="{TemplateBinding BorderThickness}">
+                                                        <Grid>
+                                                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                                                              VerticalAlignment="Center"
+                                                                              HorizontalAlignment="Stretch"
+                                                                              RecognizesAccessKey="True"/>
+                                                            <TextBlock x:Name="SortArrow"
+                                                                       FontSize="10"
+                                                                       Margin="4,0,4,0"
+                                                                       HorizontalAlignment="Right"
+                                                                       VerticalAlignment="Center"
+                                                                       Foreground="{TemplateBinding Foreground}"
+                                                                       Visibility="Collapsed"/>
+                                                        </Grid>
+                                                    </Border>
+                                                </Grid>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="SortDirection" Value="Ascending">
+                                                        <Setter TargetName="SortArrow" Property="Text" Value="▲"/>
+                                                        <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                                    </Trigger>
+                                                    <Trigger Property="SortDirection" Value="Descending">
+                                                        <Setter TargetName="SortArrow" Property="Text" Value="▼"/>
+                                                        <Setter TargetName="SortArrow" Property="Visibility" Value="Visible"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                    <Style.Triggers>
+                                        <Trigger Property="SortDirection" Value="Ascending">
+                                            <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Trigger>
+                                        <Trigger Property="SortDirection" Value="Descending">
+                                            <Setter Property="Foreground" Value="{DynamicResource AppAccentBrush}"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Process"
+                                                      Binding="{Binding ProcessName}"
+                                                      Width="*"
+                                                      MinWidth="220" />
+                                <DataGridTextColumn Header="Total Time"
+                                                      Binding="{Binding TotalHoursDisplay}"
+                                                      SortMemberPath="TotalSeconds"
+                                                      Width="120" />
+                                <DataGridTextColumn Header="Sessions"
+                                                      Binding="{Binding SessionCount}"
+                                                      SortMemberPath="SessionCount"
+                                                      Width="100" />
+                                <DataGridTextColumn Header="First Seen"
+                                                      Binding="{Binding FirstSeenLocal}"
+                                                      SortMemberPath="FirstSeenUtc"
+                                                      Width="180" />
+                                <DataGridTextColumn Header="Last Seen"
+                                                      Binding="{Binding LastSeenLocal}"
+                                                      SortMemberPath="LastSeenUtc"
+                                                      Width="180" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                    </Border>
+                </DockPanel>
             </TabItem>
 
             <TabItem Header="Top 10 Chart">
                 <Border Background="{DynamicResource AppContentBackgroundBrush}"
                         Padding="24">
                     <Grid>
-                        <!-- Transparent interval "map" behind the columns -->
                         <Grid Margin="0,12,0,32"
                               VerticalAlignment="Stretch">
                             <Grid.ColumnDefinitions>
@@ -465,7 +781,6 @@
                                        Opacity="0.05" />
                         </Grid>
 
-                        <!-- Centered top-10 bar chart -->
                         <ItemsControl x:Name="ChartItems"
                                       HorizontalAlignment="Center"
                                       VerticalAlignment="Stretch"
@@ -534,6 +849,7 @@
                             <TextBox x:Name="RetentionDaysBox"
                                      Width="80"
                                      Padding="4"
+                                     Margin="10 0 0 0"
                                      Text="90"
                                      Background="{DynamicResource AppContentBackgroundBrush}"
                                      Foreground="{DynamicResource AppPrimaryTextBrush}"

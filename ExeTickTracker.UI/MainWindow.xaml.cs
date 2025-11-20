@@ -1,34 +1,37 @@
 ﻿using ExeTicksTracker.Data;
 using ExeTickTracker.UI.Models;
-using Microsoft.EntityFrameworkCore;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Threading.Tasks;
-using System.Linq;
 using System.Windows.Media;
+using System.ComponentModel;
+using ExeTickTracker.UI.Helpers;
 
 namespace ExeTickTracker.UI;
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
+
 public partial class MainWindow : Window
 {
     private readonly List<AppUsageSummary> _allData = new();
+    private readonly List<AppUsageSummary> _filteredData = new();
     private readonly ObservableCollection<AppUsageSummary> _visibleData = new();
+    private readonly ObservableCollection<AppUsageSummary> _rangeData = new();
     private bool _isLoading;
+    private const int PageSize = 20;
+    private int _loadedCount;
     public double MaxTotalSeconds { get; private set; }
     private bool _suppressSettingsSave;
+    private string _currentTheme = "Light";
 
     public MainWindow()
     {
         InitializeComponent();
         UsageGrid.ItemsSource = _visibleData;
+        RangeGrid.ItemsSource = _rangeData;
 
         Loaded += MainWindow_Loaded;
+        Closing += MainWindow_Closing;
 
-        ApplyTheme("Light");
         LoadSettings();
     }
 
@@ -49,78 +52,10 @@ public partial class MainWindow : Window
 
         try
         {
-            var grouped = await Task.Run(() =>
-            {
-                using var db = new UsageDbContext();
-
-                var aggregates = db.AppUsageAggregates
-                    .AsNoTracking()
-                    .ToList();
-
-                var intervalGroups = db.AppUsageIntervals
-                    .AsNoTracking()
-                    .ToList()
-                    .GroupBy(x => x.ProcessName);
-
-                var summaries = new Dictionary<string, AppUsageSummary>(StringComparer.OrdinalIgnoreCase);
-
-                // Seed from aggregates (older, rolled-up data)
-                foreach (var agg in aggregates)
-                {
-                    summaries[agg.ProcessName] = new AppUsageSummary
-                    {
-                        ProcessName = agg.ProcessName,
-                        TotalSeconds = agg.TotalSeconds,
-                        SessionCount = agg.SessionCount,
-                        FirstSeenUtc = agg.FirstSeenUtc,
-                        LastSeenUtc = agg.LastSeenUtc
-                    };
-                }
-
-                // Add recent intervals (last ~90 days)
-                foreach (var group in intervalGroups)
-                {
-                    var processName = group.Key;
-                    var totalSeconds = group.Sum(i => (i.EndUtc - i.StartUtc).TotalSeconds);
-                    var firstSeen = group.Min(i => i.StartUtc);
-                    var lastSeen = group.Max(i => i.EndUtc);
-                    var sessionCount = group.Count();
-
-                    if (summaries.TryGetValue(processName, out var existing))
-                    {
-                        existing.TotalSeconds += totalSeconds;
-                        existing.SessionCount += sessionCount;
-
-                        if (!existing.FirstSeenUtc.HasValue || firstSeen < existing.FirstSeenUtc.Value)
-                        {
-                            existing.FirstSeenUtc = firstSeen;
-                        }
-
-                        if (!existing.LastSeenUtc.HasValue || lastSeen > existing.LastSeenUtc.Value)
-                        {
-                            existing.LastSeenUtc = lastSeen;
-                        }
-                    }
-                    else
-                    {
-                        summaries[processName] = new AppUsageSummary
-                        {
-                            ProcessName = processName,
-                            TotalSeconds = totalSeconds,
-                            SessionCount = sessionCount,
-                            FirstSeenUtc = firstSeen,
-                            LastSeenUtc = lastSeen
-                        };
-                    }
-                }
-
-                return summaries.Values
-                    .OrderByDescending(x => x.TotalSeconds)
-                    .ToList();
-            });
+            var allSummaries = await Task.Run(DbOperations.GetAllUsageSummaries);
 
             _allData.Clear();
-            _allData.AddRange(grouped);
+            _allData.AddRange(allSummaries);
 
             UpdateSummary();
             ApplyFilters();
@@ -136,7 +71,7 @@ public partial class MainWindow : Window
             _allData.Clear();
             _visibleData.Clear();
             SummaryText.Text = "Failed to load data.";
-            SummaryTotalTimeText.Text = "0.0 h";
+            SummaryTotalTimeText.Text = "0.0 minutes";
             SummaryAppCountText.Text = "0 apps";
             SummaryTopAppText.Text = "-";
         }
@@ -196,13 +131,39 @@ public partial class MainWindow : Window
             .OrderByDescending(x => x.TotalSeconds)
             .ToList();
 
+        _filteredData.Clear();
+        _filteredData.AddRange(filtered);
+
         _visibleData.Clear();
-        foreach (var item in filtered)
+        _loadedCount = 0;
+        LoadNextPage();
+    }
+
+    private void LoadNextPage()
+    {
+        var remaining = _filteredData.Count - _loadedCount;
+        if (remaining <= 0)
+        {
+            LoadMoreButton.Visibility = Visibility.Collapsed;
+            SummaryText.Text = _allData.Count == 0
+                ? "No data loaded."
+                : $"Showing {_visibleData.Count} of {_filteredData.Count} apps";
+            return;
+        }
+
+        var toTake = Math.Min(PageSize, remaining);
+        var nextItems = _filteredData
+            .Skip(_loadedCount)
+            .Take(toTake);
+
+        foreach (var item in nextItems)
         {
             _visibleData.Add(item);
         }
 
-        var chartTop = filtered.Take(10).ToList();
+        _loadedCount = _visibleData.Count;
+
+        var chartTop = _filteredData.Take(10).ToList();
         MaxTotalSeconds = chartTop.Count == 0
             ? 0
             : chartTop.Max(x => x.TotalSeconds);
@@ -210,21 +171,26 @@ public partial class MainWindow : Window
 
         SummaryText.Text = _allData.Count == 0
             ? "No data loaded."
-            : $"Showing {filtered.Count} of {_allData.Count} apps";
+            : $"Showing {_visibleData.Count} of {_filteredData.Count} apps";
+
+        LoadMoreButton.Visibility = _loadedCount < _filteredData.Count
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     private void UpdateSummary()
     {
         if (_allData.Count == 0)
         {
-            SummaryTotalTimeText.Text = "0.0 h";
+            SummaryTotalTimeText.Text = "0.0 minutes";
             SummaryAppCountText.Text = "0 apps";
             SummaryTopAppText.Text = "-";
             return;
         }
 
         var totalSeconds = _allData.Sum(x => x.TotalSeconds);
-        SummaryTotalTimeText.Text = $"{totalSeconds / 3600d:0.0} h";
+        SummaryTotalTimeText.Text = totalSeconds >= 3600 ? $"{totalSeconds / 3600d:0.0} hours" : 
+            $"{totalSeconds / 60d:0.0} minutes";
 
         SummaryAppCountText.Text = $"{_allData.Count} apps";
 
@@ -258,6 +224,11 @@ public partial class MainWindow : Window
         };
     }
 
+    private void LoadMoreButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        LoadNextPage();
+    }
+
     private void SearchBox_OnTextChanged(object sender, TextChangedEventArgs e)
     {
         ApplyFilters();
@@ -282,104 +253,36 @@ public partial class MainWindow : Window
     {
         if (ThemeCombo?.SelectedItem is ComboBoxItem { Tag: string tag })
         {
-            ApplyTheme(tag);
+            ThemeConfiguration.ApplyTheme(tag);
+            _currentTheme = tag;
         }
     }
-
-    private static void SetBrush(ResourceDictionary resources, string key, Color color)
-    {
-        resources[key] = new SolidColorBrush(color);
-    }
-
-    private void ApplyTheme(string theme)
-    {
-        var resources = Application.Current.Resources;
-        Color windowBackground;
-        Color contentBackground;
-        Color primaryText;
-        Color accent;
-
-        switch (theme)
-        {
-            case "Dark":
-                windowBackground = Color.FromRgb(0x18, 0x18, 0x18);
-                contentBackground = Color.FromRgb(0x20, 0x20, 0x20);
-                primaryText = Colors.White;
-                accent = Color.FromRgb(0x3B, 0x82, 0xF6);
-
-                SetBrush(resources, "AppWindowBackgroundBrush", windowBackground);
-                SetBrush(resources, "AppHeaderBackgroundBrush", Color.FromRgb(0x22, 0x22, 0x22));
-                SetBrush(resources, "AppContentBackgroundBrush", contentBackground);
-                SetBrush(resources, "AppBorderBrush", Color.FromRgb(0x33, 0x33, 0x33));
-                SetBrush(resources, "AppRowBackgroundBrush", contentBackground);
-                SetBrush(resources, "AppRowAlternateBackgroundBrush", Color.FromRgb(0x27, 0x27, 0x27));
-                SetBrush(resources, "AppPrimaryTextBrush", primaryText);
-                SetBrush(resources, "AppSecondaryTextBrush", Color.FromRgb(0xAA, 0xAA, 0xAA));
-                SetBrush(resources, "AppAccentBrush", accent);
-                break;
-
-            case "Night":
-                windowBackground = Color.FromRgb(0x0B, 0x0B, 0x0F);
-                contentBackground = Color.FromRgb(0x12, 0x12, 0x18);
-                primaryText = Colors.White;
-                accent = Color.FromRgb(0xFB, 0x92, 0x3B);
-
-                SetBrush(resources, "AppWindowBackgroundBrush", windowBackground);
-                SetBrush(resources, "AppHeaderBackgroundBrush", Color.FromRgb(0x14, 0x14, 0x1A));
-                SetBrush(resources, "AppContentBackgroundBrush", contentBackground);
-                SetBrush(resources, "AppBorderBrush", Color.FromRgb(0x26, 0x26, 0x30));
-                SetBrush(resources, "AppRowBackgroundBrush", contentBackground);
-                SetBrush(resources, "AppRowAlternateBackgroundBrush", Color.FromRgb(0x1A, 0x1A, 0x24));
-                SetBrush(resources, "AppPrimaryTextBrush", primaryText);
-                SetBrush(resources, "AppSecondaryTextBrush", Color.FromRgb(0x99, 0x99, 0xAA));
-                SetBrush(resources, "AppAccentBrush", accent);
-                break;
-
-            default: // Light
-                windowBackground = Color.FromRgb(0xF2, 0xF2, 0xF2);
-                contentBackground = Colors.White;
-                primaryText = Color.FromRgb(0x11, 0x11, 0x11);
-                accent = Color.FromRgb(0x3B, 0x82, 0xF6);
-
-                SetBrush(resources, "AppWindowBackgroundBrush", windowBackground);
-                SetBrush(resources, "AppHeaderBackgroundBrush", Colors.White);
-                SetBrush(resources, "AppContentBackgroundBrush", contentBackground);
-                SetBrush(resources, "AppBorderBrush", Color.FromRgb(0xDD, 0xDD, 0xDD));
-                SetBrush(resources, "AppRowBackgroundBrush", contentBackground);
-                SetBrush(resources, "AppRowAlternateBackgroundBrush", Color.FromRgb(0xF5, 0xF7, 0xFB));
-                SetBrush(resources, "AppPrimaryTextBrush", primaryText);
-                SetBrush(resources, "AppSecondaryTextBrush", Color.FromRgb(0x66, 0x66, 0x66));
-                SetBrush(resources, "AppAccentBrush", accent);
-                break;
-        }
-
-        // Keep system colors roughly aligned so built-in templates (e.g. combo popups) match the theme
-        resources[SystemColors.WindowBrushKey] = new SolidColorBrush(contentBackground);
-        resources[SystemColors.ControlBrushKey] = new SolidColorBrush(contentBackground);
-        resources[SystemColors.ControlTextBrushKey] = new SolidColorBrush(primaryText);
-        resources[SystemColors.HighlightBrushKey] = new SolidColorBrush(accent);
-        resources[SystemColors.HighlightTextBrushKey] = new SolidColorBrush(Colors.White);
-    }
-
+  
     private void LoadSettings()
     {
         try
         {
-            using var db = new UsageDbContext();
 
-            int retentionDays = 90;
-            int pollSeconds = 2;
+            var retentionDays = 90;
+            var pollSeconds = 2;
+            var theme = "Light";
 
-            var retentionSetting = db.AppSettings.FirstOrDefault(x => x.Key == "RetentionDays");
-            if (retentionSetting != null && int.TryParse(retentionSetting.Value, out var parsedRetention) && parsedRetention > 0)
+            var retentionSetting = DbOperations.GetFromAppSettings("RetentionDays");
+            if (retentionSetting != null && int.TryParse(retentionSetting, out var parsedRetention) && parsedRetention > 0)
             {
                 retentionDays = parsedRetention;
             }
 
-            var pollSetting = db.AppSettings.FirstOrDefault(x => x.Key == "PollSeconds");
-            if (pollSetting != null && int.TryParse(pollSetting.Value, out var parsedPoll) && parsedPoll >= 1 && parsedPoll <= 10)
+            var pollSetting = DbOperations.GetFromAppSettings("PollSeconds");
+            if (pollSetting != null && int.TryParse(pollSetting, out var parsedPoll) && parsedPoll >= 1 && parsedPoll <= 10)
             {
                 pollSeconds = parsedPoll;
+            }
+
+            var themeSetting = DbOperations.GetFromAppSettings("Theme");
+            if (themeSetting is not null & themeSetting is "Light" or "Dark" or "Night")
+            {
+                theme = themeSetting;
             }
 
             _suppressSettingsSave = true;
@@ -396,14 +299,24 @@ public partial class MainWindow : Window
             }
             else
             {
-                AccuracyCombo.SelectedIndex = 1; // Normal
+                AccuracyCombo.SelectedIndex = 1;
+            }
+
+            var themeItem = ThemeCombo.Items
+                .OfType<ComboBoxItem>()
+                .FirstOrDefault(i => (string?)i.Tag == theme);
+            if (themeItem != null)
+            {
+                ThemeCombo.SelectedItem = themeItem;
+                ThemeConfiguration.ApplyTheme(theme!);
+                _currentTheme = theme!;
             }
 
             UpdateConfigText(retentionDays, pollSeconds);
         }
         catch
         {
-            // Ignore settings load errors and keep defaults
+            // Ignore settings load errors, Use Default
         }
         finally
         {
@@ -418,7 +331,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Determine final values we are saving
         var days = retentionDaysOverride ?? (int.TryParse(RetentionDaysBox.Text, out var parsedDays) && parsedDays > 0
             ? parsedDays
             : 90);
@@ -429,25 +341,8 @@ public partial class MainWindow : Window
 
         try
         {
-            using var db = new UsageDbContext();
-
-            var retentionSetting = db.AppSettings.FirstOrDefault(x => x.Key == "RetentionDays");
-            if (retentionSetting == null)
-            {
-                retentionSetting = new AppSetting { Key = "RetentionDays" };
-                db.AppSettings.Add(retentionSetting);
-            }
-            retentionSetting.Value = days.ToString();
-
-            var pollSetting = db.AppSettings.FirstOrDefault(x => x.Key == "PollSeconds");
-            if (pollSetting == null)
-            {
-                pollSetting = new AppSetting { Key = "PollSeconds" };
-                db.AppSettings.Add(pollSetting);
-            }
-            pollSetting.Value = seconds.ToString();
-
-            db.SaveChanges();
+            DbOperations.SetInAppSettings(Constants.RetentionDaysKey, days.ToString());
+            DbOperations.SetInAppSettings(Constants.PollSecondsKey, seconds.ToString());
         }
         catch
         {
@@ -457,16 +352,23 @@ public partial class MainWindow : Window
         UpdateConfigText(days, seconds);
     }
 
+    private void MainWindow_Closing(object? sender, CancelEventArgs e)
+    {
+        if (!string.IsNullOrEmpty(_currentTheme))
+        {
+            ThemeConfiguration.SaveTheme(_currentTheme!);
+        }
+    }
+
     private int GetPollingSecondsFromUi()
     {
-        if (AccuracyCombo.SelectedItem is ComboBoxItem item &&
-            item.Tag is string tag &&
+        if (AccuracyCombo.SelectedItem is ComboBoxItem { Tag: string tag } &&
             int.TryParse(tag, out var pollSeconds))
         {
             return pollSeconds;
         }
 
-        return 2; // default
+        return 2;
     }
 
     private void UpdateConfigText(int retentionDays, int pollSeconds)
@@ -506,13 +408,136 @@ public partial class MainWindow : Window
 
     private void RetentionDaysBox_OnPreviewTextInput(object sender, TextCompositionEventArgs e)
     {
-        // Only allow digits
         e.Handled = e.Text.Any(ch => !char.IsDigit(ch));
     }
 
     private async void RefreshButton_OnClick(object sender, RoutedEventArgs e)
     {
         await LoadDataAsync();
+    }
+
+    private async Task LoadRangeDataAsync()
+    {
+        if (RangeFromPicker.SelectedDate is not { } fromDate)
+        {
+            MessageBox.Show(this,
+                "Please select at least a start date.",
+                "Date required",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var toDate = RangeToPicker.SelectedDate;
+        var search = RangeSearchBox.Text.Trim();
+        var useRange = RangeIsSpanCheckBox.IsChecked == true;
+
+        var fromDateOnly = DateOnly.FromDateTime(fromDate.Date);
+        DateOnly? toDateOnly = useRange && toDate.HasValue
+            ? DateOnly.FromDateTime(toDate.Value.Date)
+            : fromDateOnly;
+
+        var summaries = await Task.Run(() =>
+        {
+            var from = fromDateOnly;
+            var to = toDateOnly;
+
+            var intervals = DbOperations.Query<AppUsageInterval>(
+                x => x.ProcessUsingDate >= from && x.ProcessUsingDate <= to.Value);
+
+            var grouped = intervals
+                .GroupBy(i => i.ProcessName)
+                .Select(g =>
+                {
+                    var totalSeconds = g.Sum(i => (i.EndUtc - i.StartUtc).TotalSeconds);
+                    var firstSeen = g.Min(i => i.StartUtc);
+                    var lastSeen = g.Max(i => i.EndUtc);
+                    var sessionCount = g.Count();
+
+                    return new AppUsageSummary
+                    {
+                        ProcessName = g.Key,
+                        TotalSeconds = totalSeconds,
+                        FirstSeenUtc = firstSeen,
+                        LastSeenUtc = lastSeen,
+                        SessionCount = sessionCount
+                    };
+                })
+                .ToList();
+
+              if (!string.IsNullOrEmpty(search))
+              {
+                  grouped = grouped
+                      .Where(x => x.ProcessName.Contains(search, StringComparison.OrdinalIgnoreCase))
+                      .ToList();
+              }
+
+            return grouped
+                .OrderByDescending(x => x.TotalSeconds)
+                .ToList();
+        });
+
+        _rangeData.Clear();
+        foreach (var summary in summaries)
+        {
+            _rangeData.Add(summary);
+        }
+    }
+
+    private async void RangeFromPicker_OnSelectedDateChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (RangeIsSpanCheckBox.IsChecked != true && RangeFromPicker.SelectedDate.HasValue)
+        {
+            RangeToPicker.SelectedDate = RangeFromPicker.SelectedDate;
+        }
+
+        await LoadRangeDataAsync();
+    }
+
+    private async void RangeToPicker_OnSelectedDateChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (RangeIsSpanCheckBox.IsChecked == true)
+        {
+            await LoadRangeDataAsync();
+        }
+    }
+
+    private async void RangeSearchBox_OnTextChanged(object sender, TextChangedEventArgs e)
+    {
+        await LoadRangeDataAsync();
+    }
+
+    private void RangeIsSpanCheckBox_OnCheckedChanged(object? sender, RoutedEventArgs e)
+    {
+        var useRange = RangeIsSpanCheckBox.IsChecked == true;
+        RangeToPicker.IsEnabled = useRange;
+
+        switch (useRange)
+        {
+            case false when RangeFromPicker.SelectedDate.HasValue:
+            case true when RangeFromPicker.SelectedDate.HasValue && !RangeToPicker.SelectedDate.HasValue:
+                RangeToPicker.SelectedDate = RangeFromPicker.SelectedDate;
+                break;
+        }
+    }
+
+    private void UsageGrid_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (e.Handled)
+        {
+            return;
+        }
+
+        if (VisualTreeHelper.GetParent((DependencyObject)sender) is UIElement parent)
+        {
+            var eventArg = new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+            {
+                RoutedEvent = UIElement.MouseWheelEvent,
+                Source = sender
+            };
+            parent.RaiseEvent(eventArg);
+            e.Handled = true;
+        }
     }
 
     private void UsageGrid_OnMouseDoubleClick(object sender, MouseButtonEventArgs e)

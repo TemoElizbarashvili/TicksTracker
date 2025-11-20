@@ -49,6 +49,21 @@
             </Style.Triggers>
         </Style>
 
+        <Style TargetType="DatePicker">
+            <Setter Property="Background" Value="{DynamicResource AppRowBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="2" />
+        </Style>
+
+        <Style TargetType="DatePickerTextBox">
+            <Setter Property="Background" Value="{DynamicResource AppRowBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="2" />
+        </Style>
+
         <Style TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource AppAccentBrush}" />
             <Setter Property="Foreground" Value="White" />

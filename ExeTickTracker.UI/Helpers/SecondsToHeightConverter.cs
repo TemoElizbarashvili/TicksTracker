@@ -1,8 +1,7 @@
-using System;
 using System.Globalization;
 using System.Windows.Data;
 
-namespace ExeTickTracker.UI;
+namespace ExeTickTracker.UI.Helpers;
 
 internal class SecondsToHeightConverter : IMultiValueConverter
 {
