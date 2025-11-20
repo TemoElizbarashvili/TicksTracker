@@ -37,7 +37,7 @@ That said, always treat time‑tracking tools as sensitive: your usage history c
 
 ## Download TickTracker
 
-👉 **[Download the Windows Installer](https://github.com/TemoElizbarashvili/TickTracker/releases/latest/download/TickTrackerSetup.exe)**  
+👉 CHeck `Releases` And download latest version: `TickTrackerSetup.exe`.
 
 The installer:
 
