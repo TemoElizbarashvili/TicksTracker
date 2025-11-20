@@ -1,4 +1,4 @@
-namespace ExeTicksTracker.Data;
+namespace TickTracker.Shared.Data;
 
 public class AppSetting
 {

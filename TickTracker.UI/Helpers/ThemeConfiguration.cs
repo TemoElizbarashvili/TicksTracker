@@ -1,7 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Media;
 
-namespace ExeTickTracker.UI.Helpers;
+namespace TickTracker.UI.Helpers;
 
 public static class ThemeConfiguration
 {

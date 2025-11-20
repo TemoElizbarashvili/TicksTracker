@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using ExeTicksTracker.Data;
+using TickTracker.Shared.Data;
 
 namespace TickTracker.Shared.Tracking;
 

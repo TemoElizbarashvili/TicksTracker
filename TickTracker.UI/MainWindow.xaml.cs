@@ -1,14 +1,14 @@
-﻿using ExeTicksTracker.Data;
-using ExeTickTracker.UI.Models;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.ComponentModel;
-using ExeTickTracker.UI.Helpers;
+using TickTracker.Shared.Data;
+using TickTracker.UI.Helpers;
+using TickTracker.UI.Models;
 
-namespace ExeTickTracker.UI;
+namespace TickTracker.UI;
 
 public partial class MainWindow : Window
 {

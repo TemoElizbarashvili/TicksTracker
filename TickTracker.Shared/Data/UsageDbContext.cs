@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace ExeTicksTracker.Data;
+namespace TickTracker.Shared.Data;
 
 public class UsageDbContext : DbContext
 {

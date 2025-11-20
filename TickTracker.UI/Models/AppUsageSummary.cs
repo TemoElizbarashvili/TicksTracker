@@ -1,4 +1,4 @@
-﻿namespace ExeTickTracker.UI.Models;
+﻿namespace TickTracker.UI.Models;
 
 internal class AppUsageSummary
 {
@@ -8,7 +8,6 @@ internal class AppUsageSummary
     public DateTime? LastSeenUtc { get; set; }
     public int SessionCount { get; set; }
 
-    // For UI: hh:mm:ss
     public string TotalTimeFormatted =>
         TimeSpan.FromSeconds(TotalSeconds).ToString(@"hh\:mm\:ss");
 

@@ -1,4 +1,4 @@
-﻿namespace ExeTickTracker.UI.Helpers;
+﻿namespace TickTracker.UI.Helpers;
 
 public static class Constants
 {

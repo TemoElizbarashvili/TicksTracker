@@ -1,9 +1,9 @@
-using ExeTickTracker.UI.Models;
 using System.Linq.Expressions;
-using ExeTicksTracker.Data;
 using Microsoft.EntityFrameworkCore;
+using TickTracker.Shared.Data;
+using TickTracker.UI.Models;
 
-namespace ExeTickTracker.UI.Helpers;
+namespace TickTracker.UI.Helpers;
 
 internal static class DbOperations
 {
