@@ -10,10 +10,47 @@
         Height="600"
         Width="1000"
         MinWidth="1000"
-        MinHeight="650">
+        MinHeight="650"
+        WindowStyle="None"
+        ResizeMode="CanResize">
 
     <Window.Resources>
         <helpers:SecondsToHeightConverter x:Key="SecondsToHeightConverter" />
+
+        <Style x:Key="ThinScrollBar" TargetType="ScrollBar">
+            <Setter Property="Background" Value="{DynamicResource AppRowAlternateBackgroundBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ScrollBar">
+                        <Grid x:Name="Root" Background="{TemplateBinding Background}">
+                            <Track x:Name="PART_Track"
+                                   IsDirectionReversed="true"
+                                   Focusable="false">
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb"
+                                           Background="{DynamicResource AppAccentBrush}">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Background="{TemplateBinding Background}"
+                                                        CornerRadius="4"/>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="Orientation" Value="Vertical">
+                                <Setter TargetName="Root" Property="Width" Value="8"/>
+                            </Trigger>
+                            <Trigger Property="Orientation" Value="Horizontal">
+                                <Setter TargetName="Root" Property="Height" Value="8"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
 
         <Style x:Key="CustomCalendarStyle" TargetType="{x:Type Calendar}">
             <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
@@ -296,56 +333,151 @@
             </Style.Triggers>
         </Style>
 
+        <Style TargetType="DataGridCell">
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Padding="{TemplateBinding Padding}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Background="{TemplateBinding Background}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="WindowControlButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button" >
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource AppRowAlternateBackgroundBrush}"/>
+                                <Setter Property="Foreground"
+                                        Value="{DynamicResource AppPrimaryTextBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background"
+                                        Value="{DynamicResource AppBorderBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
     <DockPanel Margin="0" Background="{DynamicResource AppWindowBackgroundBrush}">
 
         <Border DockPanel.Dock="Top"
-                Padding="16"
+                Padding="5 4 4 0"
                 Background="{DynamicResource AppHeaderBackgroundBrush}"
                 BorderBrush="{DynamicResource AppBorderBrush}"
-                BorderThickness="0 0 0 1">
+                BorderThickness="0 0 0 1"
+                MouseLeftButtonDown="HeaderBar_OnMouseLeftButtonDown">
             <StackPanel>
                 <DockPanel LastChildFill="False">
-                    <TextBlock Text="App Usage Viewer"
-                               FontSize="20"
-                               FontWeight="Bold"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource AppPrimaryTextBrush}" />
-
                     <StackPanel Orientation="Horizontal"
+                                VerticalAlignment="Center">
+                        <Border Width="24"
+                                Height="24"
+                                CornerRadius="20"
+                                Background="{DynamicResource AppContentBackgroundBrush}"
+                                Margin="0 0 8 0" >
+                            <Image Width="25"
+                                   Height="25"
+                                   Source="/Assets/TickTracker.png"
+                                   SnapsToDevicePixels="True" />
+                        </Border>
+                        <TextBlock Text="App Usage Viewer"
+                                   FontSize="16"
+                                   FontWeight="Bold"
+                                   VerticalAlignment="Top"
+                                   Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Vertical"
                                 DockPanel.Dock="Right"
                                 VerticalAlignment="Center">
-                        <TextBlock Text="Theme:"
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0 0 15 0"
+                                    DockPanel.Dock="Right"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top">
+                            <Button Style="{StaticResource WindowControlButtonStyle}"
+                                    Click="MinimizeButton_OnClick"
+                                    ToolTip="Minimize">
+                                <TextBlock Text="&#x2013;" FontSize="17"/>
+                            </Button>
+                            <Button Style="{StaticResource WindowControlButtonStyle}"
+                                    Click="MaximizeButton_OnClick"
+                                    ToolTip="Maximize / Restore">
+                                <TextBlock Text="&#x25A1;" FontSize="16" />
+                            </Button>
+                            <Button Style="{StaticResource WindowControlButtonStyle}"
+                                    Click="CloseButton_OnClick"
+                                    ToolTip="Close">
+                                <TextBlock Text="&#x2715;" FontSize="16"/>
+                            </Button>
+                        </StackPanel>
+
+                        <StackPanel 
+                            Orientation="Horizontal"
+                            Margin="0 10 0 0">
+                            <TextBlock Text="Theme:"
                                    VerticalAlignment="Center"
                                    Margin="0 0 8 0"
                                    Foreground="{DynamicResource AppSecondaryTextBrush}" />
-                        <ComboBox x:Name="ThemeCombo"
+                            <ComboBox x:Name="ThemeCombo"
                                   Width="100"
                                   Margin="0 0 12 0"
                                   SelectedIndex="0"
                                   SelectionChanged="ThemeCombo_OnSelectionChanged">
-                            <ComboBoxItem Content="Light" Tag="Light" IsSelected="True" />
-                            <ComboBoxItem Content="Dark" Tag="Dark" />
-                            <ComboBoxItem Content="Night" Tag="Night" />
-                        </ComboBox>
+                                <ComboBoxItem Content="Light" Tag="Light" IsSelected="True" />
+                                <ComboBoxItem Content="Dark" Tag="Dark" />
+                                <ComboBoxItem Content="Night" Tag="Night" />
+                            </ComboBox>
 
-                        <Button x:Name="RefreshButton"
+                            <Button x:Name="RefreshButton"
                                 Click="RefreshButton_OnClick"
                                 Padding="8 4"
                                 Background="{DynamicResource AppContentBackgroundBrush}"
                                 Foreground="{DynamicResource AppPrimaryTextBrush}"
                                 BorderBrush="{DynamicResource AppBorderBrush}"
                                 ToolTip="Reload usage data">
-                            <StackPanel Orientation="Horizontal"
+                                <StackPanel Orientation="Horizontal"
                                           VerticalAlignment="Center">
-                                <TextBlock Text="⟳"
+                                    <TextBlock Text="⟳"
                                            FontSize="14"
                                            Margin="0 0 6 0" />
-                                <TextBlock Text="Refresh"
+                                    <TextBlock Text="Refresh"
                                              VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Button>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
                     </StackPanel>
                 </DockPanel>
 
@@ -498,6 +630,9 @@
                 <Border Background="{DynamicResource AppContentBackgroundBrush}"
                         Padding="0">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ScrollViewer.Resources>
+                            <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}" />
+                        </ScrollViewer.Resources>
                         <StackPanel>
                             <DataGrid x:Name="UsageGrid"
                                       IsReadOnly="True"
@@ -505,6 +640,7 @@
                                       CanUserSortColumns="True"
                                       HeadersVisibility="Column"
                                       AlternationCount="2"
+                                      Margin="0 10 0 0"
                                       BorderThickness="0"
                                       RowBackground="Transparent"
                                       AlternatingRowBackground="Transparent"
@@ -523,7 +659,7 @@
                                         <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
                                         <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
                                         <Setter Property="Padding" Value="8,6"/>
-                                        <Setter Property="BorderThickness" Value="0,0,1,2"/>
+                                        <Setter Property="BorderThickness" Value="0,0,2,3"/>
                                         <Setter Property="BorderBrush" Value="{DynamicResource AppBorderBrush}"/>
                                         <Setter Property="Template">
                                             <Setter.Value>
@@ -675,6 +811,7 @@
                                     Background="{DynamicResource AppContentBackgroundBrush}"
                                     Foreground="{DynamicResource AppPrimaryTextBrush}">
                             <DataGrid.Resources>
+                                <Style TargetType="ScrollBar" BasedOn="{StaticResource ThinScrollBar}" />
                                 <Style TargetType="DataGridColumnHeader">
                                     <Setter Property="Background" Value="{DynamicResource AppContentBackgroundBrush}"/>
                                     <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>

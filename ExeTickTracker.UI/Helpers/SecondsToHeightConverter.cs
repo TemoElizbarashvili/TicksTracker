@@ -3,7 +3,7 @@ using System.Windows.Data;
 
 namespace ExeTickTracker.UI.Helpers;
 
-internal class SecondsToHeightConverter : IMultiValueConverter
+public class SecondsToHeightConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
@@ -27,4 +27,3 @@ internal class SecondsToHeightConverter : IMultiValueConverter
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         => throw new NotSupportedException();
 }
-
