@@ -25,7 +25,8 @@ Source: "{#SourcePath}\publish\UI\*"; DestDir: "{app}\UI"; Flags: ignoreversion 
 
 [Dirs]
 ; Ensure ProgramData folder exists for SQLite DB (your code also creates it)
-Name: "{commonappdata}\TickTracker"; Flags: uninsneveruninstall
+; Grant normal users modify rights so the UI can write settings.
+Name: "{commonappdata}\TickTracker"; Flags: uninsneveruninstall; Permissions: users-modify
 
 [Icons]
 ; Start Menu shortcut for the UI

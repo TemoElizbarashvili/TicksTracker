@@ -319,12 +319,12 @@ public partial class MainWindow : Window
             }
 
             var pollSetting = DbOperations.GetFromAppSettings(Constants.PollSecondsKey);
-            if (pollSetting != null && int.TryParse(pollSetting, out var parsedPoll) && parsedPoll >= 1 && parsedPoll <= 10)
+            if (pollSetting != null && int.TryParse(pollSetting, out var parsedPoll) && parsedPoll is >= 1 and <= 10)
             {
                 pollSeconds = parsedPoll;
             }
 
-            var themeSetting = DbOperations.GetFromAppSettings("Theme");
+            var themeSetting = DbOperations.GetFromAppSettings(Constants.ThemeKey);
             if (themeSetting is not null & themeSetting is "Light" or "Dark" or "Night")
             {
                 theme = themeSetting;
