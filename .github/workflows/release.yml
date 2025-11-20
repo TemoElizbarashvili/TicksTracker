@@ -1,0 +1,62 @@
+name: Build & Release TickTracker
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.x.x"
+
+      - name: Publish TickTracker.Service
+        run: >
+          dotnet publish TickTracker.Service/TickTracker.Service.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -o publish/Service
+
+      - name: Publish TickTracker.UI
+        run: >
+          dotnet publish TickTracker.UI/TickTracker.UI.csproj
+          -c Release
+          -r win-x64
+          --self-contained true
+          -p:PublishSingleFile=true
+          -o publish/UI
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Build installer with Inno Setup
+        shell: pwsh
+        run: |
+          $iss = Join-Path $env:GITHUB_WORKSPACE "TickTracker.iss"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" $iss
+
+      - name: Find installer
+        id: find_installer
+        shell: pwsh
+        run: |
+          $file = Get-ChildItem -Recurse -Filter "TickTrackerSetup*.exe" | Select-Object -First 1
+          if (-not $file) { throw "Installer not found" }
+          echo "path=$($file.FullName)" >> $env:GITHUB_OUTPUT
+
+      - name: Create GitHub Release & upload installer
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ steps.find_installer.outputs.path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
