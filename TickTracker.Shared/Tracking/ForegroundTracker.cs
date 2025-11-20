@@ -184,7 +184,7 @@ public class ForegroundTracker
         try
         {
             using var proc = Process.GetProcessById((int)pid);
-            return proc.ProcessName;
+            return proc.MainModule?.FileVersionInfo.FileDescription ?? proc.ProcessName;
         }
         catch
         {
