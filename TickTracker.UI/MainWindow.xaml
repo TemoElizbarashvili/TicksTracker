@@ -211,9 +211,9 @@
                                   Content="{TemplateBinding SelectionBoxItem}"
                                   ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
                                   ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
-                                  Margin="6,3,23,3"
+                                  Margin="0,3,23,3"
                                   VerticalAlignment="Center"
-                                  HorizontalAlignment="Left" />
+                                  HorizontalAlignment="Center" />
                 <Popup Name="Popup"
                        Placement="Bottom"
                        IsOpen="{TemplateBinding IsDropDownOpen}"
@@ -965,11 +965,11 @@
             </TabItem>
 
             <TabItem Header="Settings">
-                <Border Background="{DynamicResource AppContentBackgroundBrush}"
-                        Padding="24">
-                    <StackPanel>
-                        <TextBlock Text="Settings"
-                                   FontSize="18"
+                  <Border Background="{DynamicResource AppContentBackgroundBrush}"
+                          Padding="24">
+                      <StackPanel>
+                          <TextBlock Text="Settings"
+                                     FontSize="18"
                                    FontWeight="Bold"
                                    Foreground="{DynamicResource AppPrimaryTextBrush}" />
                         <TextBlock Text="Control data retention and sampling rate used by the tracker."
@@ -980,12 +980,12 @@
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                             <TextBlock Text="Retention window (days):"
                                        VerticalAlignment="Center"
-                                       Width="160"
+                                       Width="210"
                                        Foreground="{DynamicResource AppPrimaryTextBrush}" />
                             <TextBox x:Name="RetentionDaysBox"
                                      Width="80"
                                      Padding="4"
-                                     Margin="10 0 0 0"
+                                     Margin="0 0 0 0"
                                      Text="90"
                                      Background="{DynamicResource AppContentBackgroundBrush}"
                                      Foreground="{DynamicResource AppPrimaryTextBrush}"
@@ -994,34 +994,47 @@
                                      LostFocus="RetentionDaysBox_OnLostFocus" />
                         </StackPanel>
 
-                        <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                            <TextBlock Text="Sampling accuracy:"
-                                       VerticalAlignment="Center"
-                                       Width="160"
-                                       Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                          <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                              <TextBlock Text="Sampling accuracy:"
+                                         VerticalAlignment="Center"
+                                         Width="210"
+                                         Foreground="{DynamicResource AppPrimaryTextBrush}" />
                             <ComboBox x:Name="AccuracyCombo"
                                       Width="180"
-                                      SelectionChanged="AccuracyCombo_OnSelectionChanged">
-                                <ComboBoxItem Content="High (1s polling)" Tag="1" />
-                                <ComboBoxItem Content="Normal (2s polling)" Tag="2" IsSelected="True" />
-                                <ComboBoxItem Content="Low (5s polling)" Tag="5" />
-                            </ComboBox>
-                        </StackPanel>
+                                        SelectionChanged="AccuracyCombo_OnSelectionChanged">
+                                  <ComboBoxItem Content="High (1s polling)" Tag="1" />
+                                  <ComboBoxItem Content="Normal (2s polling)" Tag="2" IsSelected="True" />
+                                  <ComboBoxItem Content="Low (5s polling)" Tag="5" />
+                              </ComboBox>
+                          </StackPanel>
 
-                        <Border Margin="0,24,0,0" 
-                                Padding="12" 
-                                Background="{DynamicResource AppWindowBackgroundBrush}" 
-                                BorderBrush="{DynamicResource AppBorderBrush}" 
-                                BorderThickness="1" 
-                                CornerRadius="4">
-                            <StackPanel>
-                                <TextBlock Text="Note" FontWeight="Bold" Foreground="{DynamicResource AppSecondaryTextBrush}" FontSize="12"/>
-                                <TextBlock Text="Changes are applied the next time the tracker process starts."
-                                           Margin="0,4,0,0"
-                                           Foreground="{DynamicResource AppSecondaryTextBrush}"
-                                           FontSize="12" />
-                                <TextBlock x:Name="CurrentConfigText"
-                                           Margin="0,4,0,0"
+                          <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                              <TextBlock Text="Ignore Windows system apps:"
+                                         VerticalAlignment="Center"
+                                         Width="210"
+                                         Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                              <CheckBox x:Name="IgnoreWindowsAppsCheckBox"
+                                        Margin="0,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Content="Do not track built-in Windows apps"
+                                        IsChecked="True"
+                                        Click="IgnoreWindowsAppsCheckBox_OnClick" />
+                          </StackPanel>
+  
+                          <Border Margin="0,24,0,0" 
+                                  Padding="12" 
+                                  Background="{DynamicResource AppWindowBackgroundBrush}" 
+                                  BorderBrush="{DynamicResource AppBorderBrush}" 
+                                  BorderThickness="1" 
+                                  CornerRadius="4">
+                              <StackPanel>
+                                  <TextBlock Text="Note" FontWeight="Bold" Foreground="{DynamicResource AppSecondaryTextBrush}" FontSize="12"/>
+                                  <TextBlock Text="Settings take effect after you reboot your PC (or restart the TickTracker background tracker)."
+                                             Margin="0,4,0,0"
+                                             Foreground="{DynamicResource AppSecondaryTextBrush}"
+                                             FontSize="12" />
+                                  <TextBlock x:Name="CurrentConfigText"
+                                             Margin="0,4,0,0"
                                            Foreground="{DynamicResource AppSecondaryTextBrush}"
                                            FontSize="12" />
                             </StackPanel>

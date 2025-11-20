@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using TickTracker.Shared.Data;
+using TickTracker.Utils.Data;
 
-namespace TickTracker.Shared.Tracking;
+namespace TickTracker.Utils.Tracking;
 
 public class ForegroundTracker
 {
@@ -12,42 +12,15 @@ public class ForegroundTracker
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
-    private TimeSpan _pollInterval = TimeSpan.FromSeconds(2);
-    private DateOnly _lastRetentionDate = DateOnly.FromDateTime(DateTime.UtcNow);
+    private static bool _ignoreWindowsApps = true;
+
+    private static TimeSpan _pollInterval = TimeSpan.FromSeconds(2);
+    private static int _retentionDays = 90;
+    private static DateOnly _lastRetentionDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
     public async Task RunAsync(CancellationToken cancellationToken)
     {
-        await using var db = new UsageDbContext();
-        await db.Database.EnsureCreatedAsync(cancellationToken);
-
-        var retentionDays = 90;
-        var pollSeconds = 2;
-        try
-        {
-            var retentionSetting = db.AppSettings.FirstOrDefault(x => x.Key == "RetentionDays");
-            if (retentionSetting != null &&
-                int.TryParse(retentionSetting.Value, out var parsedRetention) &&
-                parsedRetention > 0)
-            {
-                retentionDays = parsedRetention;
-            }
-
-            var pollSetting = db.AppSettings.FirstOrDefault(x => x.Key == "PollSeconds");
-            if (pollSetting != null &&
-                int.TryParse(pollSetting.Value, out var parsedPoll) &&
-                parsedPoll >= 1 && parsedPoll <= 10)
-            {
-                pollSeconds = parsedPoll;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"[WARN] Settings read error: {ex.Message}");
-        }
-
-        _pollInterval = TimeSpan.FromSeconds(pollSeconds);
-
-        await RunRetentionAsync(db, retentionDays, cancellationToken);
+        await ExtractSettings(cancellationToken);
 
         string? currentProcess = null;
         var currentStartUtc = DateTime.UtcNow;
@@ -87,12 +60,12 @@ public class ForegroundTracker
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             if (today > _lastRetentionDate && !cancellationToken.IsCancellationRequested)
             {
-                await RunRetentionAsync(db, retentionDays, cancellationToken);
+                await using var db = new UsageDbContext();
+                await RunRetentionAsync(db, _retentionDays, cancellationToken);
                 _lastRetentionDate = today;
             }
         }
 
-        // App is shutting down: close last interval once
         if (currentProcess != null)
         {
             await SaveIntervalAsync(currentProcess, currentStartUtc, DateTime.UtcNow, cancellationToken);
@@ -181,14 +154,30 @@ public class ForegroundTracker
             return null;
         }
 
+        using var proc = Process.GetProcessById((int)pid);
+
+        var windowsDir =
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
         try
         {
-            using var proc = Process.GetProcessById((int)pid);
-            return proc.MainModule?.FileVersionInfo.FileDescription ?? proc.ProcessName;
+            if (_ignoreWindowsApps)
+            {
+                if (proc.MainModule?.FileName != null &&
+                    proc.MainModule.FileName.StartsWith(windowsDir, StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+            }
+
+            return string.IsNullOrEmpty(proc.MainModule?.FileVersionInfo.FileDescription) ? (string.IsNullOrEmpty(proc.MainModule?.FileVersionInfo.ProductName) ? proc.ProcessName
+                    : proc.MainModule?.FileVersionInfo.ProductName)
+                : proc.MainModule?.FileVersionInfo.FileDescription;
         }
         catch
         {
-            return null;
+            // Access denied or process exited
+            return proc.ProcessName;
         }
     }
 
@@ -218,5 +207,43 @@ public class ForegroundTracker
 
         db.AppUsageIntervals.Add(interval);
         await db.SaveChangesAsync(token);
+    }
+
+    private static async Task ExtractSettings(CancellationToken cancellationToken)
+    {
+        await using var db = new UsageDbContext();
+        await db.Database.EnsureCreatedAsync(cancellationToken);
+
+        try
+        {
+            var retentionSetting = db.AppSettings.FirstOrDefault(x => x.Key == Constants.RetentionDaysKey);
+            if (retentionSetting != null &&
+                int.TryParse(retentionSetting.Value, out var parsedRetention) &&
+                parsedRetention > 0)
+            {
+                _retentionDays = parsedRetention;
+            }
+
+            var pollSetting = db.AppSettings.FirstOrDefault(x => x.Key == Constants.PollSecondsKey);
+            if (pollSetting != null &&
+                int.TryParse(pollSetting.Value, out var parsedPoll) &&
+                parsedPoll is >= 1 and <= 10)
+            {
+                _pollInterval = TimeSpan.FromSeconds(parsedPoll);
+            }
+
+            var ignoreWindowsSetting = db.AppSettings.FirstOrDefault(x => x.Key == Constants.IgnoreWindowsAppsKey);
+            if (ignoreWindowsSetting != null &&
+                bool.TryParse(ignoreWindowsSetting.Value, out var ignoreWindowsApps))
+            {
+                _ignoreWindowsApps = ignoreWindowsApps;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[WARN] Settings read error: {ex.Message}");
+        }
+
+        await RunRetentionAsync(db, _retentionDays, cancellationToken);
     }
 }

@@ -4,9 +4,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using TickTracker.Shared.Data;
 using TickTracker.UI.Helpers;
 using TickTracker.UI.Models;
+using TickTracker.Utils;
+using TickTracker.Utils.Data;
 
 namespace TickTracker.UI;
 
@@ -22,10 +23,14 @@ public partial class MainWindow : Window
     public double MaxTotalSeconds { get; private set; }
     private bool _suppressSettingsSave;
     private string _currentTheme = "Light";
-
+            
     public MainWindow()
     {
+        // Prevent settings-save side effects while XAML is parsed and events fire
+        _suppressSettingsSave = true;
+
         InitializeComponent();
+
         UsageGrid.ItemsSource = _visibleData;
         RangeGrid.ItemsSource = _rangeData;
 
@@ -33,6 +38,9 @@ public partial class MainWindow : Window
         Closing += MainWindow_Closing;
 
         LoadSettings();
+
+        // LoadSettings sets _suppressSettingsSave in its finally; ensure it's cleared.
+        _suppressSettingsSave = false;
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -293,7 +301,7 @@ public partial class MainWindow : Window
             _currentTheme = tag;
         }
     }
-  
+
     private void LoadSettings()
     {
         try
@@ -302,14 +310,15 @@ public partial class MainWindow : Window
             var retentionDays = 90;
             var pollSeconds = 2;
             var theme = "Light";
+            var ignoreWindowsApps = true;
 
-            var retentionSetting = DbOperations.GetFromAppSettings("RetentionDays");
+            var retentionSetting = DbOperations.GetFromAppSettings(Constants.RetentionDaysKey);
             if (retentionSetting != null && int.TryParse(retentionSetting, out var parsedRetention) && parsedRetention > 0)
             {
                 retentionDays = parsedRetention;
             }
 
-            var pollSetting = DbOperations.GetFromAppSettings("PollSeconds");
+            var pollSetting = DbOperations.GetFromAppSettings(Constants.PollSecondsKey);
             if (pollSetting != null && int.TryParse(pollSetting, out var parsedPoll) && parsedPoll >= 1 && parsedPoll <= 10)
             {
                 pollSeconds = parsedPoll;
@@ -319,6 +328,13 @@ public partial class MainWindow : Window
             if (themeSetting is not null & themeSetting is "Light" or "Dark" or "Night")
             {
                 theme = themeSetting;
+            }
+
+            var ignoreWindowsSetting = DbOperations.GetFromAppSettings(Constants.IgnoreWindowsAppsKey);
+            if (ignoreWindowsSetting != null &&
+                bool.TryParse(ignoreWindowsSetting, out var parsedIgnore))
+            {
+                ignoreWindowsApps = parsedIgnore;
             }
 
             _suppressSettingsSave = true;
@@ -348,7 +364,9 @@ public partial class MainWindow : Window
                 _currentTheme = theme!;
             }
 
-            UpdateConfigText(retentionDays, pollSeconds);
+            IgnoreWindowsAppsCheckBox.IsChecked = ignoreWindowsApps;
+
+            UpdateConfigText(retentionDays, pollSeconds, ignoreWindowsApps);
         }
         catch
         {
@@ -360,7 +378,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void SaveSettings(int? retentionDaysOverride = null, int? pollSecondsOverride = null)
+    private void SaveSettings(int? retentionDaysOverride = null, int? pollSecondsOverride = null, bool? ignoreWindowsAppsOverride = null)
     {
         if (_suppressSettingsSave)
         {
@@ -375,17 +393,20 @@ public partial class MainWindow : Window
         var seconds = pollSecondsOverride ?? GetPollingSecondsFromUi();
         seconds = Math.Clamp(seconds, 1, 10);
 
+        var ignoreWindowsApps = ignoreWindowsAppsOverride ?? (IgnoreWindowsAppsCheckBox.IsChecked != false);
+
         try
         {
             DbOperations.SetInAppSettings(Constants.RetentionDaysKey, days.ToString());
             DbOperations.SetInAppSettings(Constants.PollSecondsKey, seconds.ToString());
+            DbOperations.SetInAppSettings(Constants.IgnoreWindowsAppsKey, ignoreWindowsApps ? "true" : "false");
         }
         catch
         {
             // Ignore settings save errors; tracker will just use defaults
         }
 
-        UpdateConfigText(days, seconds);
+        UpdateConfigText(days, seconds, ignoreWindowsApps);
     }
 
     private void MainWindow_Closing(object? sender, CancelEventArgs e)
@@ -407,14 +428,15 @@ public partial class MainWindow : Window
         return 2;
     }
 
-    private void UpdateConfigText(int retentionDays, int pollSeconds)
+    private void UpdateConfigText(int retentionDays, int pollSeconds, bool ignoreWindowsApps)
     {
         if (CurrentConfigText == null)
         {
             return;
         }
 
-        CurrentConfigText.Text = $"Current tracker config: {pollSeconds} seconds polling, {retentionDays} days retention.";
+        var ignoreText = ignoreWindowsApps ? "Windows apps are ignored" : "Windows apps are tracked";
+        CurrentConfigText.Text = $"Current tracker config: {pollSeconds} seconds polling, {retentionDays} days retention, {ignoreText}.";
     }
 
     private void RetentionDaysBox_OnLostFocus(object sender, RoutedEventArgs e)
@@ -440,6 +462,17 @@ public partial class MainWindow : Window
         {
             SaveSettings(retentionDaysOverride: null, pollSecondsOverride: pollSeconds);
         }
+    }
+
+    private void IgnoreWindowsAppsCheckBox_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (_suppressSettingsSave)
+        {
+            return;
+        }
+
+        var ignore = IgnoreWindowsAppsCheckBox.IsChecked == true;
+        SaveSettings(retentionDaysOverride: null, pollSecondsOverride: null, ignoreWindowsAppsOverride: ignore);
     }
 
     private void RetentionDaysBox_OnPreviewTextInput(object sender, TextCompositionEventArgs e)

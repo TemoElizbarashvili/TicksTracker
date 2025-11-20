@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Media;
+using TickTracker.Utils;
 
 namespace TickTracker.UI.Helpers;
 

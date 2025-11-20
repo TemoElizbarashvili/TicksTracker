@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using TickTracker.Shared.Data;
 using TickTracker.UI.Models;
+using TickTracker.Utils.Data;
 
 namespace TickTracker.UI.Helpers;
 

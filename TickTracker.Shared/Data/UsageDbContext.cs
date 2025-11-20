@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace TickTracker.Shared.Data;
+namespace TickTracker.Utils.Data;
 
 public class UsageDbContext : DbContext
 {
@@ -49,6 +49,10 @@ public class UsageDbContext : DbContext
             entity.HasKey(x => x.Key);
             entity.Property(x => x.Key).HasMaxLength(64);
             entity.Property(x => x.Value).HasMaxLength(256);
+
+            var ignoreWindowsApps = new AppSetting { Key = Constants.IgnoreWindowsAppsKey, Value = "true" };
+
+            entity.HasData(new List<AppSetting> { ignoreWindowsApps });
         });
     }
 }

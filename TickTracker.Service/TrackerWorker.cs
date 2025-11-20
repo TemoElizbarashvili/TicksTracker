@@ -1,4 +1,4 @@
-﻿using TickTracker.Shared.Tracking;
+﻿using TickTracker.Utils.Tracking;
 
 namespace TickTracker.Service;
 

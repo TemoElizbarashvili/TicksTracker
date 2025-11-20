@@ -1,4 +1,4 @@
-namespace TickTracker.Shared.Data;
+namespace TickTracker.Utils.Data;
 
 public class AppUsageAggregate
 {

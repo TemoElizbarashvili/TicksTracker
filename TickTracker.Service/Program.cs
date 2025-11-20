@@ -1,5 +1,5 @@
 using TickTracker.Service;
-using TickTracker.Shared.Tracking;
+using TickTracker.Utils.Tracking;
 
 Host.CreateDefaultBuilder(args)
     .UseWindowsService()
