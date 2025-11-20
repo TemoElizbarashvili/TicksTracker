@@ -1,9 +1,8 @@
-using ExeTicksTracker.Data;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Linq;
+using ExeTicksTracker.Data;
 
-namespace ExeTicksTracker.Tracking;
+namespace TickTracker.Shared.Tracking;
 
 public class ForegroundTracker
 {
@@ -207,7 +206,7 @@ public class ForegroundTracker
 
         // Do not track this tracker or the UI viewer itself
         if (string.Equals(processName, "ExeTicksTracker", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(processName, "ExeTickTracker.UI", StringComparison.OrdinalIgnoreCase))
+            string.Equals(processName, "TickTracker", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }

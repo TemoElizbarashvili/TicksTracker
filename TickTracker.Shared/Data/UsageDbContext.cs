@@ -16,8 +16,8 @@ public class UsageDbContext : DbContext
         }
 
         var dbPath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "AppUsageTracker",
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "TickTracker",
             "usage.db");
 
         Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);

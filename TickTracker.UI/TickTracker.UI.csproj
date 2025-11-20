@@ -7,14 +7,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>Assets\TickTracker.ico</ApplicationIcon>
+    <AssemblyName>TickTracker</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\ExeTicksTracker\ExeTicksTracker.csproj" />
+    <Folder Include="Assets\" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Assets\" />
+    <ProjectReference Include="..\TickTracker.Shared\TickTracker.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>

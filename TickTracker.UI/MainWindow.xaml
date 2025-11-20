@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:ExeTickTracker.UI"
         xmlns:helpers="clr-namespace:ExeTickTracker.UI.Helpers"
         mc:Ignorable="d"
-        Title="App Usage Viewer"
+        Title="TickTracker"
         Height="600"
         Width="1000"
         MinWidth="1000"
@@ -412,7 +412,7 @@
                                    Source="/Assets/TickTracker.png"
                                    SnapsToDevicePixels="True" />
                         </Border>
-                        <TextBlock Text="App Usage Viewer"
+                        <TextBlock Text="TickTracker"
                                    FontSize="16"
                                    FontWeight="Bold"
                                    VerticalAlignment="Top"

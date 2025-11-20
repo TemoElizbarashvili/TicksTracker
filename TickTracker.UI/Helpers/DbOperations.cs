@@ -1,7 +1,7 @@
-using ExeTicksTracker.Data;
 using ExeTickTracker.UI.Models;
-using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using ExeTicksTracker.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExeTickTracker.UI.Helpers;
 
@@ -41,10 +41,6 @@ internal static class DbOperations
         return query.AsNoTracking().ToList();
     }
 
-    /// <summary>
-    /// Aggregates AppUsageAggregates + AppUsageIntervals into per-process summaries using LINQ over EF.
-    /// This is used once on load for header stats and in-memory filtering.
-    /// </summary>
     public static List<AppUsageSummary> GetAllUsageSummaries()
     {
         using var db = new UsageDbContext();
