@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <OutputType>WinExe</OutputType>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <UserSecretsId>dotnet-TickTracker.Service-36252620-eda8-4ffd-9735-3e6e9a1f118a</UserSecretsId>
   </PropertyGroup>
 
