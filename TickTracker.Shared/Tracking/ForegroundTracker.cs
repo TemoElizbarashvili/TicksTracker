@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using ExeTicksTracker.Data;
 
 namespace TickTracker.Shared.Tracking;
@@ -12,7 +13,9 @@ public class ForegroundTracker
     [DllImport("user32.dll")]
     private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
-    // Default poll interval; can be overridden by settings
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern int GetWindowModuleFileName(IntPtr hWnd, StringBuilder lpszFileName, int cch);
+
     private TimeSpan _pollInterval = TimeSpan.FromSeconds(2);
     private DateOnly _lastRetentionDate = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -21,7 +24,6 @@ public class ForegroundTracker
         await using var db = new UsageDbContext();
         await db.Database.EnsureCreatedAsync(cancellationToken);
 
-        // Load settings (with safe fallbacks)
         var retentionDays = 90;
         var pollSeconds = 2;
         try
@@ -49,7 +51,6 @@ public class ForegroundTracker
 
         _pollInterval = TimeSpan.FromSeconds(pollSeconds);
 
-        // Run retention once at startup
         await RunRetentionAsync(db, retentionDays, cancellationToken);
 
         string? currentProcess = null;
@@ -87,7 +88,6 @@ public class ForegroundTracker
                 break;
             }
 
-            // Run retention once per day while service/app is running
             var today = DateOnly.FromDateTime(DateTime.UtcNow);
             if (today > _lastRetentionDate && !cancellationToken.IsCancellationRequested)
             {
@@ -96,7 +96,6 @@ public class ForegroundTracker
             }
         }
 
-        // App is shutting down: close last interval once
         if (currentProcess != null)
         {
             await SaveIntervalAsync(currentProcess, currentStartUtc, DateTime.UtcNow, cancellationToken);
@@ -170,13 +169,18 @@ public class ForegroundTracker
             Console.WriteLine($"[WARN] Retention/aggregation error: {ex.Message}");
         }
     }
-
     private static string? GetCurrentForegroundProcessName()
     {
         var hWnd = GetForegroundWindow();
         if (hWnd == IntPtr.Zero)
         {
             return null;
+        }
+
+        var exeName = TryGetExeFriendlyNameFromWindow(hWnd);
+        if (!string.IsNullOrWhiteSpace(exeName))
+        {
+            return exeName;
         }
 
         GetWindowThreadProcessId(hWnd, out var pid);
@@ -195,6 +199,38 @@ public class ForegroundTracker
             return null;
         }
     }
+
+    private static string? TryGetExeFriendlyNameFromWindow(IntPtr hWnd)
+    {
+        var sb = new StringBuilder(1024);
+        var len = GetWindowModuleFileName(hWnd, sb, sb.Capacity);
+        if (len <= 0)
+        {
+            return null;
+        }
+
+        var fullPath = sb.ToString();
+        var rawName = Path.GetFileNameWithoutExtension(fullPath);
+
+        try
+        {
+            var info = FileVersionInfo.GetVersionInfo(fullPath);
+
+            if (!string.IsNullOrWhiteSpace(info.FileDescription))
+                return info.FileDescription.Trim();
+
+            if (!string.IsNullOrWhiteSpace(info.ProductName))
+                return info.ProductName.Trim();
+        }
+        catch
+        {
+            // if reading version info fails, just fall back to raw exe name
+        }
+
+        return rawName;
+    }
+
+
 
     private static async Task SaveIntervalAsync(
         string processName,
