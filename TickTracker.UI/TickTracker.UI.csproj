@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TickTracker.Shared\TickTracker.Utils.csproj" />
+    <ProjectReference Include="..\TickTracker.Utils\TickTracker.Utils.csproj" />
   </ItemGroup>
 
   <ItemGroup>

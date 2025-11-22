@@ -48,5 +48,5 @@ The installer:
 ## For developers
 
 - `TickTracker.Service` – background service that tracks the active window and writes to SQLite.
-- `TickTracker.Shared` – shared tracking and data logic (EF Core models, DB context).
+- `TickTracker.Utils` – tracking Utils and data logic (EF Core models, DB context).
 - `TickTracker.UI` – WPF application that visualises your app usage.

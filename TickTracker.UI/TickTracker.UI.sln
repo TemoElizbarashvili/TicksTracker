@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TickTracker.UI", "TickTracker.UI.csproj", "{1A9B94DB-C466-0BF1-15E1-2BCAE16EED6D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1A9B94DB-C466-0BF1-15E1-2BCAE16EED6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A9B94DB-C466-0BF1-15E1-2BCAE16EED6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A9B94DB-C466-0BF1-15E1-2BCAE16EED6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A9B94DB-C466-0BF1-15E1-2BCAE16EED6D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {0E51664D-5698-40A1-8822-04B2E9E46577}
+	EndGlobalSection
+EndGlobal

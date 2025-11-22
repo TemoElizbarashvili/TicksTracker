@@ -7,6 +7,7 @@ public class UsageDbContext : DbContext
     public DbSet<AppUsageInterval> AppUsageIntervals => Set<AppUsageInterval>();
     public DbSet<AppUsageAggregate> AppUsageAggregates => Set<AppUsageAggregate>();
     public DbSet<AppSetting> AppSettings => Set<AppSetting>();
+    public DbSet<BlacklistedApp> BlacklistedApps => Set<BlacklistedApp>();
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -53,6 +54,13 @@ public class UsageDbContext : DbContext
             var ignoreWindowsApps = new AppSetting { Key = Constants.IgnoreWindowsAppsKey, Value = "true" };
 
             entity.HasData(new List<AppSetting> { ignoreWindowsApps });
+        });
+
+        modelBuilder.Entity<BlacklistedApp>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.ProcessName).HasMaxLength(128);
+            entity.Property(x => x.CreatedUtc).IsRequired();
         });
     }
 }

@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.EntityFrameworkCore;
 using TickTracker.Utils.Data;
+using TickTracker.Utils.Helpers;
 
 namespace TickTracker.Utils.Tracking;
 
@@ -195,7 +197,7 @@ public class ForegroundTracker
             return;
         }
 
-        await using var db = new UsageDbContext();
+
         var interval = new AppUsageInterval
         {
             Id = Guid.CreateVersion7(),
@@ -205,14 +207,19 @@ public class ForegroundTracker
             ProcessUsingDate = DateOnly.FromDateTime(DateTime.UtcNow)
         };
 
-        db.AppUsageIntervals.Add(interval);
-        await db.SaveChangesAsync(token);
+        await DbOperations.SaveIntervalAsync(interval, token);
     }
 
     private static async Task ExtractSettings(CancellationToken cancellationToken)
     {
         await using var db = new UsageDbContext();
-        await db.Database.EnsureCreatedAsync(cancellationToken);
+
+        var pendingMigrations = await db.Database.GetPendingMigrationsAsync(cancellationToken);
+
+        if (pendingMigrations.Any())
+        {
+            await db.Database.MigrateAsync(cancellationToken);
+        }
 
         try
         {

@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Media;
-using TickTracker.Utils;
+using TickTracker.Utils.Helpers;
+using Constants = TickTracker.Utils.Constants;
 
 namespace TickTracker.UI.Helpers;
 

@@ -1,6 +1,6 @@
-﻿namespace TickTracker.UI.Models;
+﻿namespace TickTracker.Utils.Models;
 
-internal class AppUsageSummary
+public class AppUsageSummary
 {
     public string ProcessName { get; set; } = default!;
     public double TotalSeconds { get; set; }

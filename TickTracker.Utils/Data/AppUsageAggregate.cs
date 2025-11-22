@@ -1,9 +1,12 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace TickTracker.Utils.Data;
 
 public class AppUsageAggregate
 {
     public Guid Id { get; set; }
 
+    [MaxLength(128)]
     public string ProcessName { get; set; } = string.Empty;
 
     // Total accumulated seconds across all aggregated (old) intervals

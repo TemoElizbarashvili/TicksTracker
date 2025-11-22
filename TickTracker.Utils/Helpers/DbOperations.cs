@@ -1,11 +1,11 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using TickTracker.UI.Models;
 using TickTracker.Utils.Data;
+using TickTracker.Utils.Models;
 
-namespace TickTracker.UI.Helpers;
+namespace TickTracker.Utils.Helpers;
 
-internal static class DbOperations
+public static class DbOperations
 {
     public static string? GetFromAppSettings(string key)
     {
@@ -41,12 +41,84 @@ internal static class DbOperations
         return query.AsNoTracking().ToList();
     }
 
+    public static List<string> GetBlacklistedAppNames()
+    {
+        using var db = new UsageDbContext();
+
+        return db.BlacklistedApps
+            .AsNoTracking()
+            .OrderBy(x => x.ProcessName)
+            .Select(x => x.ProcessName)
+            .ToList();
+    }
+
+    public static void BlacklistApp(string processName)
+    {
+        using var db = new UsageDbContext();
+
+        var existing = db.BlacklistedApps
+            .FirstOrDefault(x => x.ProcessName == processName);
+
+        if (existing == null)
+        {
+            db.BlacklistedApps.Add(new BlacklistedApp
+            {
+                Id = Guid.CreateVersion7(),
+                ProcessName = processName,
+                CreatedUtc = DateTime.UtcNow
+            });
+        }
+
+        var aggregates = db.AppUsageAggregates
+            .Where(x => x.ProcessName == processName)
+            .ToList();
+
+        var intervals = db.AppUsageIntervals
+            .Where(x => x.ProcessName == processName)
+            .ToList();
+
+        if (aggregates.Count > 0)
+        {
+            db.AppUsageAggregates.RemoveRange(aggregates);
+        }
+
+        if (intervals.Count > 0)
+        {
+            db.AppUsageIntervals.RemoveRange(intervals);
+        }
+
+        db.SaveChanges();
+    }
+
+    public static async Task RemoveItemFromBlackListAsync(string processName, CancellationToken cancellationToken = default)
+    {
+        await using var db = new UsageDbContext();
+
+        var entry = await db.BlacklistedApps
+            .FirstOrDefaultAsync(x => x.ProcessName == processName, cancellationToken: cancellationToken);
+
+        if (entry == null)
+        {
+            return;
+        }
+        db.BlacklistedApps.Remove(entry);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     public static List<AppUsageSummary> GetAllUsageSummaries()
     {
         using var db = new UsageDbContext();
 
+        var blacklistedNames = db.BlacklistedApps
+            .AsNoTracking()
+            .Select(x => x.ProcessName)
+            .ToList();
+
+        var blacklistSet = new HashSet<string>(blacklistedNames, StringComparer.OrdinalIgnoreCase);
+
         var aggregates = db.AppUsageAggregates
             .AsNoTracking()
+            .Where(a => !blacklistSet.Contains(a.ProcessName))
             .Select(a => new
             {
                 a.ProcessName,
@@ -59,6 +131,7 @@ internal static class DbOperations
 
         var intervals = db.AppUsageIntervals
             .AsNoTracking()
+            .Where(i => !blacklistSet.Contains(i.ProcessName))
             .ToList();
 
         var summaries = new Dictionary<string, AppUsageSummary>(StringComparer.OrdinalIgnoreCase);
@@ -114,5 +187,24 @@ internal static class DbOperations
         return summaries.Values
             .OrderByDescending(x => x.TotalSeconds)
             .ToList();
+    }
+
+
+    public static async Task SaveIntervalAsync(AppUsageInterval interval, CancellationToken cancellationToken)
+    {
+        await using var db = new UsageDbContext();
+
+        var isBlacklisted = await db.BlacklistedApps
+            .AnyAsync(x => x.ProcessName == interval.ProcessName, cancellationToken: cancellationToken);
+
+        if (isBlacklisted)
+        {
+            return;
+        }
+      
+
+        db.AppUsageIntervals.Add(interval);
+        await db.SaveChangesAsync(cancellationToken);
+
     }
 }
