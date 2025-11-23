@@ -14,11 +14,10 @@
         ResizeMode="CanResize">
     <Window.Resources>
         <helpers:SecondsToHeightConverter x:Key="SecondsToHeightConverter" />
-
         <Style x:Key="GridActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="Template">
                 <Setter.Value>
@@ -29,7 +28,7 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AppRowAlternateBackgroundBrush}"/>
-                                <Setter Property="Foreground" Value="{DynamicResource AppPrimaryTextBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AppSecondaryTextBrush}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource AppBorderBrush}"/>
@@ -845,7 +844,8 @@
                                                         Padding="0,0,0,4"
                                                         Style="{StaticResource GridActionButtonStyle}"
                                                         Content="⋯"
-                                                        FontSize="16"
+                                                        FontSize="20"
+                                                        FontWeight="Heavy"
                                                         ToolTip="More options"
                                                         Tag="{Binding}"
                                                         Click="OptionsButton_OnClick">
