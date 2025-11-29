@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -34,6 +35,8 @@ public partial class MainWindow : Window
 
         InitializeComponent();
 
+        VersionOverlay.Text = $"v{GetAppVersion()}";
+
         UsageGrid.ItemsSource = _visibleData;
         RangeGrid.ItemsSource = _rangeData;
         BlacklistGrid.ItemsSource = _blacklistedApps;
@@ -44,6 +47,12 @@ public partial class MainWindow : Window
         LoadSettings();
 
         _suppressSettingsSave = false;
+    }
+
+    private string GetAppVersion()
+    {
+        var version = Assembly.GetExecutingAssembly().GetName().Version;
+        return version?.ToString(3) ?? "unknown";
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)

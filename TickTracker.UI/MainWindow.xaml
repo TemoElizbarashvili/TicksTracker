@@ -462,33 +462,34 @@
             </Setter>
         </Style>
     </Window.Resources>
-    <DockPanel Margin="0" Background="{DynamicResource AppWindowBackgroundBrush}">
-        <Border DockPanel.Dock="Top"
-                Padding="5 4 4 0"
-                Background="{DynamicResource AppHeaderBackgroundBrush}"
-                BorderBrush="{DynamicResource AppBorderBrush}"
-                BorderThickness="0 0 0 1"
-                MouseLeftButtonDown="HeaderBar_OnMouseLeftButtonDown">
-            <StackPanel>
-                <DockPanel LastChildFill="False">
-                    <StackPanel Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <Border Width="24"
-                                Height="24"
-                                CornerRadius="20"
-                                Background="{DynamicResource AppContentBackgroundBrush}"
-                                Margin="0 0 8 0" >
-                            <Image Width="25"
-                                   Height="25"
-                                   Source="/Assets/TickTracker.png"
-                                   SnapsToDevicePixels="True" />
-                        </Border>
-                        <TextBlock Text="TickTracker"
-                                   FontSize="16"
-                                   FontWeight="Bold"
-                                   VerticalAlignment="Top"
-                                   Foreground="{DynamicResource AppPrimaryTextBrush}" />
-                    </StackPanel>
+    <Grid>
+        <DockPanel Margin="0" Background="{DynamicResource AppWindowBackgroundBrush}">
+            <Border DockPanel.Dock="Top"
+                    Padding="5 4 4 0"
+                    Background="{DynamicResource AppHeaderBackgroundBrush}"
+                    BorderBrush="{DynamicResource AppBorderBrush}"
+                    BorderThickness="0 0 0 1"
+                    MouseLeftButtonDown="HeaderBar_OnMouseLeftButtonDown">
+                <StackPanel>
+                    <DockPanel LastChildFill="False">
+                        <StackPanel Orientation="Horizontal"
+                                    VerticalAlignment="Center">
+                            <Border Width="24"
+                                    Height="24"
+                                    CornerRadius="20"
+                                    Background="{DynamicResource AppContentBackgroundBrush}"
+                                    Margin="0 0 8 0" >
+                                <Image Width="25"
+                                       Height="25"
+                                       Source="/Assets/TickTracker.png"
+                                       SnapsToDevicePixels="True" />
+                            </Border>
+                            <TextBlock Text="TickTracker"
+                                       FontSize="16"
+                                       FontWeight="Bold"
+                                       VerticalAlignment="Top"
+                                       Foreground="{DynamicResource AppPrimaryTextBrush}" />
+                        </StackPanel>
                     <StackPanel Orientation="Vertical"
                                 DockPanel.Dock="Right"
                                 VerticalAlignment="Center">
@@ -1149,5 +1150,17 @@
                 </Border>
             </TabItem>
         </TabControl>
-    </DockPanel>
+        </DockPanel>
+        <TextBlock x:Name="VersionOverlay"
+                   Text="v0.0.0"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Top"
+                   Margin="10 8 0 0"
+                   Foreground="{DynamicResource AppSecondaryTextBrush}"
+                   Opacity="0.65"
+                   FontSize="12"
+                   FontWeight="SemiBold"
+                   IsHitTestVisible="False"
+                   Panel.ZIndex="10" />
+    </Grid>
 </Window>
