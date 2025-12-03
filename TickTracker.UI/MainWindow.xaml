@@ -4,6 +4,7 @@
 	xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 	xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 	xmlns:helpers="clr-namespace:TickTracker.UI.Helpers"
+    xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         mc:Ignorable="d"
         Title="TickTracker"
         Height="600"
@@ -11,7 +12,15 @@
         MinWidth="1000"
         MinHeight="650"
         WindowStyle="None"
-        ResizeMode="CanResize">
+        ResizeMode="CanResize"
+        Background="{DynamicResource AppWindowBackgroundBrush}">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0"
+                            ResizeBorderThickness="8"
+                            CornerRadius="0"
+                            GlassFrameThickness="0"
+                            UseAeroCaptionButtons="False" />
+    </shell:WindowChrome.WindowChrome>
     <Window.Resources>
         <helpers:SecondsToHeightConverter x:Key="SecondsToHeightConverter" />
         <Style x:Key="GridActionButtonStyle" TargetType="Button">
